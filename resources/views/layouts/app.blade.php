@@ -752,7 +752,11 @@
                 ? \App\Models\ProcurementRequest::where('status','pending_ga')->count() : 0;
             $directorApprovalCount = auth()->user()->isDirector()
                 ? \App\Models\PurchaseRequest::where('status','sent_to_qad')->count() : 0;
-            $totalNotif = $pendingCount + $gaReviewCount + $directorApprovalCount;
+            $poIssuedCount = auth()->user()->isGa()
+                ? \App\Models\PurchaseRequest::where('source','ga_aggregation')
+                    ->whereIn('status',['director_confirmed','partially_received'])
+                    ->whereNotNull('qad_po_no')->count() : 0;
+            $totalNotif = $pendingCount + $gaReviewCount + $directorApprovalCount + $poIssuedCount;
         @endphp
         <button class="header-notification-btn" data-bs-toggle="dropdown">
             <i class="bi bi-bell"></i>
@@ -778,6 +782,17 @@
                     <div>
                         <div class="fw-semibold" style="font-size:13px;">{{ $directorApprovalCount }} PR Menunggu Persetujuan Direktur</div>
                         <div class="text-muted" style="font-size:11px;">Klik untuk approve/deny</div>
+                    </div>
+                </a>
+            </li>
+            @endif
+            @if($poIssuedCount > 0)
+            <li>
+                <a class="dropdown-item d-flex gap-2 align-items-center" href="{{ route('ga.receiving.index') }}">
+                    <span class="badge bg-primary p-2"><i class="bi bi-box-seam"></i></span>
+                    <div>
+                        <div class="fw-semibold" style="font-size:13px;">{{ $poIssuedCount }} PO Siap Diterima</div>
+                        <div class="text-muted" style="font-size:11px;">Klik untuk proses penerimaan barang</div>
                     </div>
                 </a>
             </li>

@@ -3,9 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Models\PurchaseRequest;
+use App\Models\User;
+use App\Notifications\PoIssuedNotification;
 use App\Services\QadSoapService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class SyncQadPoNumbers extends Command
 {
@@ -48,6 +51,16 @@ class SyncQadPoNumbers extends Command
                 'qad_req_no' => $pr->qad_req_no,
                 'qad_po_no' => $result['po_no'],
             ]);
+
+            // GA yang bakal proses receiving selanjutnya -- gagal kirim
+            // notifikasi (mis. mailbox penuh) tidak boleh menggagalkan sync
+            // command ini sendiri, cuma dicatat di log.
+            try {
+                $gaUsers = User::where('role', 'ga')->where('is_active', true)->get();
+                Notification::send($gaUsers, new PoIssuedNotification($pr->fresh()));
+            } catch (\Throwable $e) {
+                Log::error('Gagal kirim notifikasi PoIssuedNotification: ' . $e->getMessage());
+            }
 
             $this->info("PR #{$pr->id} ({$pr->qad_req_no}) -> PO {$result['po_no']}");
         }
