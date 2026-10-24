@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
-use App\Models\DepartmentQadConfig;
 use App\Models\PurchaseRequest;
 use App\Models\Transaction;
 use App\Services\BudgetService;
@@ -108,10 +107,12 @@ class GaReceivingController extends Controller
             $qadLines[] = [
                 'line' => $lineNoByDetailId[$line['detail_id']],
                 'qty'  => $qty,
+                // 'um' sengaja TIDAK dikirim -- QAD pernah balas "Submitted data was
+                // truncated" di field receiptUm untuk kode UOM kita (PCS/RIM/dst) dan
+                // qty gagal ter-post (tetap 0) walau result=warning. Biarkan QAD pakai
+                // satuan default dari PO itu sendiri, yang sudah pasti valid.
             ];
         }
-
-        $site = DepartmentQadConfig::where('department_id', $purchaseRequest->department_id)->value('site_code');
 
         // Ambil qty yang SUDAH tercatat diterima di QAD sebelum kirim — dipakai
         // sebagai baseline validasi (support penerimaan bertahap/partial), karena
@@ -120,7 +121,7 @@ class GaReceivingController extends Controller
             ? $this->qadSoap->getReceivedQtyByLine($purchaseRequest->qad_req_no)
             : [];
 
-        $qadResult = $this->qadSoap->receivePurchaseOrder($request->qad_po_no, $qadLines, $site);
+        $qadResult = $this->qadSoap->receivePurchaseOrder($request->qad_po_no, $qadLines);
         if (!$qadResult['success']) {
             return back()->withInput()->with('error', "Gagal catat penerimaan ke QAD: {$qadResult['message']}");
         }
