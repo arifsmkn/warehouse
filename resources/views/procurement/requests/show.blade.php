@@ -236,13 +236,13 @@
                                 <div class="text-muted" style="font-size:11px;">{{ $detail->item->item_code }}</div>
                             </td>
                             <td>
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:10px;">
+                                <span class="badge bg-secondary text-white" style="font-size:10px;">
                                     {{ $detail->item->category?->name ?? '-' }}
                                 </span>
                             </td>
                             <td class="fw-bold">{{ number_format($detail->qty, 2) }}</td>
                             <td>
-                                <span class="badge bg-info bg-opacity-10 text-info">{{ $detail->uom->code }}</span>
+                                <span class="badge bg-info text-dark">{{ $detail->uom->code }}</span>
                             </td>
                             <td class="text-muted" style="font-size:12px;">{{ $detail->notes ?: '-' }}</td>
                         </tr>

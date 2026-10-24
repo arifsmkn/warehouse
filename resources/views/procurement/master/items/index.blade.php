@@ -45,8 +45,8 @@
                                 {{ $item->name }}
                             </div>
                         </td>
-                        <td><span class="badge bg-info bg-opacity-10 text-info">{{ $item->uom?->code }}</span></td>
-                        <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ $item->category?->name ?? '-' }}</span></td>
+                        <td><span class="badge bg-info text-dark">{{ $item->uom?->code }}</span></td>
+                        <td><span class="badge bg-secondary text-white">{{ $item->category?->name ?? '-' }}</span></td>
                         <td>{{ $item->price ? 'Rp ' . number_format($item->price, 0, ',', '.') : '-' }}</td>
                         <td><span class="badge bg-{{ $item->is_active ? 'success' : 'secondary' }}">{{ $item->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
                         <td>
@@ -80,7 +80,7 @@
                         <i class="bi bi-info-circle"></i>
                         <div style="font-size:13px;">
                             File Excel/CSV harus memiliki kolom:
-                            <strong>kode_item, nama_item, uom, kategori</strong>
+                            <strong>kode_item, nama_item, uom, kategori, harga</strong>
                             <br><a href="{{ route('procurement.items.template') }}" class="text-info">Download template</a>
                         </div>
                     </div>

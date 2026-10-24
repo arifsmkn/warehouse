@@ -2,19 +2,26 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDemoModeScope;
+use App\Models\Concerns\HasHiddenScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
+    use HasDemoModeScope, HasHiddenScope;
+
+    public string $demoModeDateColumn = 'trans_date';
+
     protected $fillable = [
         'trans_no', 'trans_type', 'user_id', 'requester_id', 'department_id',
         'status', 'approved_by', 'approved_at', 'notes',
-        'reject_reason', 'qad_receipt_no', 'trans_date',
+        'reject_reason', 'qad_receipt_no', 'trans_date', 'hidden_at',
     ];
 
     protected $casts = [
         'approved_at' => 'datetime',
         'trans_date'  => 'date',
+        'hidden_at'   => 'datetime',
     ];
 
     public function user()
@@ -102,7 +109,8 @@ class Transaction extends Model
             default        => 'TRX',
         };
         $date = now()->format('Ymd');
-        $last = self::where('trans_type', $type)
+        // withoutGlobalScopes() wajib -- lihat catatan di ProcurementRequest::generateReqNo().
+        $last = self::withoutGlobalScopes()->where('trans_type', $type)
             ->whereDate('created_at', today())
             ->count() + 1;
         return $prefix . $date . str_pad($last, 4, '0', STR_PAD_LEFT);

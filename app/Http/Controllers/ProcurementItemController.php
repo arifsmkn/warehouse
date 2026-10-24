@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProcurementItemTemplateExport;
 use App\Imports\ProcurementItemImport;
 use App\Models\ItemCodePrefix;
+use App\Models\ItemDepartmentBudget;
 use App\Models\ProcurementCategory;
 use App\Models\ProcurementItem;
 use App\Models\ProcurementRequestDetail;
@@ -144,28 +146,26 @@ class ProcurementItemController extends Controller
 
     public function downloadTemplate()
     {
-        $headers = ['kode_item', 'nama_item', 'uom', 'kategori'];
-        $sample  = [
-            ['ATK-001', 'Pulpen Ballpoint', 'PCS', 'Alat Tulis'],
-            ['ATK-002', 'Kertas HVS A4',   'RIM', 'Kertas'],
-        ];
-
-        $callback = function () use ($headers, $sample) {
-            $f = fopen('php://output', 'w');
-            fputcsv($f, $headers);
-            foreach ($sample as $row) fputcsv($f, $row);
-            fclose($f);
-        };
-
-        return response()->stream($callback, 200, [
-            'Content-Type'        => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="template_item_atk.csv"',
-        ]);
+        return Excel::download(new ProcurementItemTemplateExport(), 'template_item_atk.xlsx');
     }
 
     public function search(Request $request)
     {
         $query = ProcurementItem::with(['uom', 'category'])->where('is_active', true);
+
+        $departmentId = auth()->user()->department_id;
+
+        // Katalog yang kelihatan di form permintaan dibatasi ke item yang
+        // sudah di-assign GA buat departemen user (ada default_budget > 0 di
+        // ItemDepartmentBudget) -- superadmin/admin (atau user tanpa
+        // departemen) tetap lihat semua, karena mereka tidak terikat alur
+        // budget per-departemen.
+        if ($departmentId && !auth()->user()->isAdmin()) {
+            $allowedItemIds = ItemDepartmentBudget::where('department_id', $departmentId)
+                ->where('default_budget', '>', 0)
+                ->pluck('procurement_item_id');
+            $query->whereIn('id', $allowedItemIds);
+        }
 
         if ($request->filled('q')) {
             $query->where(function ($q) use ($request) {
@@ -179,7 +179,6 @@ class ProcurementItemController extends Controller
         }
 
         $items = $query->orderBy('name')->limit(100)->get();
-        $departmentId = auth()->user()->department_id;
 
         // Berapa kali user ini sendiri pernah minta tiap item — dipakai buat
         // naikkan item yang "sering diorder" ke depan katalog (personal per akun).

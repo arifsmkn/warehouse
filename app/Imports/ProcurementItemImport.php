@@ -40,6 +40,7 @@ class ProcurementItemImport implements ToModel, WithHeadingRow, SkipsEmptyRows
                 'name'        => $row['nama_item'],
                 'uom_id'      => $uom->id,
                 'category_id' => $categoryId,
+                'price'       => is_numeric($row['harga'] ?? null) ? $row['harga'] : null,
                 'is_active'   => true,
             ]
         );

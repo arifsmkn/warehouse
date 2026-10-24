@@ -66,8 +66,8 @@
                         <div class="fw-bold mb-1" id="itemCode" style="font-size:13px;"></div>
                         <div class="text-muted mb-2" id="itemDesc" style="font-size:12px;"></div>
                         <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
-                            <span class="badge bg-primary bg-opacity-10 text-primary" id="itemUnit"></span>
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary" id="itemCategory"></span>
+                            <span class="badge bg-primary text-white" id="itemUnit"></span>
+                            <span class="badge bg-secondary text-white" id="itemCategory"></span>
                         </div>
                         <div class="p-2 rounded" id="stockInfoBox">
                             <div class="text-muted" style="font-size:11px;">STOK TERSEDIA</div>

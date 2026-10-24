@@ -53,12 +53,12 @@
                             <div class="fw-semibold">{{ $item->description }}</div>
                             <div class="text-muted" style="font-size:11px;">{{ $item->item_code }}</div>
                         </td>
-                        <td><span class="badge bg-secondary bg-opacity-15 text-secondary">{{ $item->category ?? '-' }}</span></td>
+                        <td><span class="badge bg-secondary text-white">{{ $item->category ?? '-' }}</span></td>
                         <td>
                             @if($item->is_memo)
-                                <span class="badge bg-info bg-opacity-10 text-info">Memo</span>
+                                <span class="badge bg-info text-dark">Memo</span>
                             @else
-                                <span class="badge bg-primary bg-opacity-10 text-primary">QAD</span>
+                                <span class="badge bg-primary text-white">QAD</span>
                             @endif
                         </td>
                         <td>
@@ -110,6 +110,7 @@
 <script>
 $('#stockTable').DataTable({
     pageLength: 20,
+    lengthMenu: [10, 20, 25, 50, 100],
     language: { search: 'Cari:', paginate: { previous: '&laquo;', next: '&raquo;' }, info: 'Menampilkan _START_-_END_ dari _TOTAL_', zeroRecords: 'Tidak ada data' },
     columnDefs: [{ orderable: false, targets: [4,5,7] }]
 });

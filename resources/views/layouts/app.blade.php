@@ -293,6 +293,12 @@
         .table th { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #6c757d; }
         .table td { vertical-align: middle; }
 
+        /* Card-body dipakai p-0 supaya tabel bisa full-bleed, tapi kontrol
+           bawaan DataTables (Show entries/Cari/info/pagination) ikut mepet
+           ke tepi kalau tidak dikasih padding sendiri. */
+        .card-body.p-0 .dataTables_wrapper > .row:first-child { padding: 16px 20px 0; }
+        .card-body.p-0 .dataTables_wrapper > .row:last-child { padding: 0 20px 16px; }
+
         /* ===== BADGE STATUS ===== */
         .badge { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 6px; }
 
@@ -447,154 +453,196 @@
         @if(auth()->user()->isAdmin())
         <li class="sidebar-caption">Transaksi</li>
         <li class="sidebar-item">
-            <a href="{{ route('transactions.goods-out.index') }}" class="sidebar-link {{ request()->routeIs('transactions.goods-out.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-box-arrow-up-right"></i>
-                <span class="pc-mtext">Keluar Barang</span>
+            <a href="#transaksiMenu" class="sidebar-link {{ request()->routeIs('transactions.*') ? 'active' : '' }}"
+               data-bs-toggle="collapse" aria-expanded="{{ request()->routeIs('transactions.*') ? 'true' : 'false' }}">
+                <i class="pc-micon bi bi-arrow-left-right"></i>
+                <span class="pc-mtext">Transaksi</span>
+                <i class="pc-arrow bi bi-chevron-right"></i>
             </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="{{ route('transactions.goods-return.scan') }}" class="sidebar-link {{ request()->routeIs('transactions.goods-return.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-arrow-return-left"></i>
-                <span class="pc-mtext">Kembalikan Barang</span>
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="{{ route('transactions.goods-in.index') }}" class="sidebar-link {{ request()->routeIs('transactions.goods-in.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-box-arrow-in-down-right"></i>
-                <span class="pc-mtext">Masuk Barang</span>
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="{{ route('transactions.memo.index') }}" class="sidebar-link {{ request()->routeIs('transactions.memo.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-journal-text"></i>
-                <span class="pc-mtext">Item Memo</span>
-            </a>
+            <ul class="pc-submenu collapse list-unstyled {{ request()->routeIs('transactions.*') ? 'show' : '' }}" id="transaksiMenu">
+                <li class="sidebar-item">
+                    <a href="{{ route('transactions.goods-out.index') }}" class="sidebar-link {{ request()->routeIs('transactions.goods-out.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-box-arrow-up-right"></i>
+                        <span class="pc-mtext">Keluar Barang</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('transactions.goods-return.scan') }}" class="sidebar-link {{ request()->routeIs('transactions.goods-return.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-arrow-return-left"></i>
+                        <span class="pc-mtext">Kembalikan Barang</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('transactions.goods-in.index') }}" class="sidebar-link {{ request()->routeIs('transactions.goods-in.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-box-arrow-in-down-right"></i>
+                        <span class="pc-mtext">Masuk Barang</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('transactions.memo.index') }}" class="sidebar-link {{ request()->routeIs('transactions.memo.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-journal-text"></i>
+                        <span class="pc-mtext">Item Memo</span>
+                    </a>
+                </li>
+            </ul>
         </li>
         @endif
 
         {{-- Admin Menu --}}
         @if(auth()->user()->isAdmin())
         <li class="sidebar-caption">Admin</li>
-
+        @php $pendingApproval = \App\Models\Transaction::where('status','pending')->where('trans_type','!=','goods_out')->count(); @endphp
         <li class="sidebar-item">
-            <a href="{{ route('admin.approvals.index') }}" class="sidebar-link {{ request()->routeIs('admin.approvals.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-check2-circle"></i>
-                <span class="pc-mtext">Approval</span>
-                @php $pendingApproval = \App\Models\Transaction::where('status','pending')->where('trans_type','!=','goods_out')->count(); @endphp
+            <a href="#adminMenu" class="sidebar-link {{ request()->routeIs('admin.approvals.*') || request()->routeIs('admin.min-stock.*') || request()->routeIs('admin.purchase-requests.*') ? 'active' : '' }}"
+               data-bs-toggle="collapse" aria-expanded="{{ request()->routeIs('admin.approvals.*') || request()->routeIs('admin.min-stock.*') || request()->routeIs('admin.purchase-requests.*') ? 'true' : 'false' }}">
+                <i class="pc-micon bi bi-shield-lock-fill"></i>
+                <span class="pc-mtext">Admin</span>
                 @if($pendingApproval > 0)
                     <span class="badge bg-danger badge-pill ms-auto">{{ $pendingApproval }}</span>
                 @endif
+                <i class="pc-arrow bi bi-chevron-right"></i>
             </a>
-        </li>
+            <ul class="pc-submenu collapse list-unstyled {{ request()->routeIs('admin.approvals.*') || request()->routeIs('admin.min-stock.*') || request()->routeIs('admin.purchase-requests.*') ? 'show' : '' }}" id="adminMenu">
+                <li class="sidebar-item">
+                    <a href="{{ route('admin.approvals.index') }}" class="sidebar-link {{ request()->routeIs('admin.approvals.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-check2-circle"></i>
+                        <span class="pc-mtext">Approval</span>
+                        @if($pendingApproval > 0)
+                            <span class="badge bg-danger badge-pill ms-auto">{{ $pendingApproval }}</span>
+                        @endif
+                    </a>
+                </li>
 
-        <li class="sidebar-item">
-            <a href="{{ route('admin.min-stock.index') }}" class="sidebar-link {{ request()->routeIs('admin.min-stock.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-bar-chart-fill"></i>
-                <span class="pc-mtext">Stok Minimum</span>
-            </a>
-        </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('admin.min-stock.index') }}" class="sidebar-link {{ request()->routeIs('admin.min-stock.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-bar-chart-fill"></i>
+                        <span class="pc-mtext">Stok Minimum</span>
+                    </a>
+                </li>
 
-        <li class="sidebar-item">
-            <a href="{{ route('admin.purchase-requests.index') }}" class="sidebar-link {{ request()->routeIs('admin.purchase-requests.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-file-earmark-text-fill"></i>
-                <span class="pc-mtext">Purchase Request</span>
-            </a>
+                <li class="sidebar-item">
+                    <a href="{{ route('admin.purchase-requests.index') }}" class="sidebar-link {{ request()->routeIs('admin.purchase-requests.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-file-earmark-text-fill"></i>
+                        <span class="pc-mtext">Purchase Request</span>
+                    </a>
+                </li>
+            </ul>
         </li>
         @endif
 
         {{-- ===== PENGADAAN ATK ===== --}}
         <li class="sidebar-caption">Pengadaan ATK</li>
-
+        @php
+            $pengadaanAtkActive = request()->routeIs('procurement.requests.*')
+                || request()->routeIs('admin.purchase-requests.*')
+                || request()->routeIs('procurement.approvals.*')
+                || request()->routeIs('ga.review.*')
+                || request()->routeIs('ga.requests.*')
+                || request()->routeIs('ga.receiving.*')
+                || request()->routeIs('ga.checkout.*')
+                || request()->routeIs('ga.budget.*')
+                || request()->routeIs('director.purchase-requests.*');
+        @endphp
         <li class="sidebar-item">
-            <a href="{{ route('procurement.requests.index') }}" class="sidebar-link {{ request()->routeIs('procurement.requests.*') ? 'active' : '' }}">
+            <a href="#pengadaanAtkMenu" class="sidebar-link {{ $pengadaanAtkActive ? 'active' : '' }}"
+               data-bs-toggle="collapse" aria-expanded="{{ $pengadaanAtkActive ? 'true' : 'false' }}">
                 <i class="pc-micon bi bi-cart3"></i>
-                <span class="pc-mtext">Permintaan Saya</span>
+                <span class="pc-mtext">Pengadaan ATK</span>
+                <i class="pc-arrow bi bi-chevron-right"></i>
             </a>
-        </li>
+            <ul class="pc-submenu collapse list-unstyled {{ $pengadaanAtkActive ? 'show' : '' }}" id="pengadaanAtkMenu">
+                <li class="sidebar-item">
+                    <a href="{{ route('procurement.requests.index') }}" class="sidebar-link {{ request()->routeIs('procurement.requests.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-cart3"></i>
+                        <span class="pc-mtext">Permintaan Saya</span>
+                    </a>
+                </li>
 
-        {{-- Purchasing: lihat semua PR yang sudah sent_to_qad --}}
-        @if(auth()->user()->isPurchasing() || auth()->user()->isAdmin())
-        <li class="sidebar-item">
-            <a href="{{ route('admin.purchase-requests.index') }}" class="sidebar-link {{ request()->routeIs('admin.purchase-requests.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-bag-check"></i>
-                <span class="pc-mtext">PR Siap Diproses</span>
-                @php $qadCount = \App\Models\PurchaseRequest::where('status','sent_to_qad')->count(); @endphp
-                @if($qadCount > 0)
-                    <span class="badge bg-primary badge-pill ms-auto">{{ $qadCount }}</span>
+                {{-- Purchasing: lihat semua PR yang sudah sent_to_qad --}}
+                @if(auth()->user()->isPurchasing() || auth()->user()->isAdmin())
+                <li class="sidebar-item">
+                    <a href="{{ route('admin.purchase-requests.index') }}" class="sidebar-link {{ request()->routeIs('admin.purchase-requests.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-bag-check"></i>
+                        <span class="pc-mtext">PR Siap Diproses</span>
+                        @php $qadCount = \App\Models\PurchaseRequest::where('status','sent_to_qad')->count(); @endphp
+                        @if($qadCount > 0)
+                            <span class="badge bg-primary badge-pill ms-auto">{{ $qadCount }}</span>
+                        @endif
+                    </a>
+                </li>
                 @endif
-            </a>
-        </li>
-        @endif
 
-        {{-- Approval Section/Dept Head (dept-scoped) --}}
-        @if(auth()->user()->role === 'section' || auth()->user()->isSuperAdmin())
-        <li class="sidebar-item">
-            <a href="{{ route('procurement.approvals.index') }}" class="sidebar-link {{ request()->routeIs('procurement.approvals.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-check2-square"></i>
-                <span class="pc-mtext">Approval Kebutuhan GA</span>
-                @php
-                    $pendingSection = \App\Models\ProcurementRequest::where('status','pending_section')
-                        ->when(!auth()->user()->isSuperAdmin(), fn($q) => $q->whereIn('department_id', auth()->user()->sectionApprovalDepartmentIds()))
-                        ->count();
-                @endphp
-                @if($pendingSection > 0)
-                    <span class="badge bg-danger badge-pill ms-auto">{{ $pendingSection }}</span>
+                {{-- Approval Section/Dept Head (dept-scoped) --}}
+                @if(auth()->user()->role === 'section' || auth()->user()->isSuperAdmin())
+                <li class="sidebar-item">
+                    <a href="{{ route('procurement.approvals.index') }}" class="sidebar-link {{ request()->routeIs('procurement.approvals.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-check2-square"></i>
+                        <span class="pc-mtext">Approval Kebutuhan GA</span>
+                        @php
+                            $pendingSection = \App\Models\ProcurementRequest::where('status','pending_section')
+                                ->when(!auth()->user()->isSuperAdmin(), fn($q) => $q->whereIn('department_id', auth()->user()->sectionApprovalDepartmentIds()))
+                                ->count();
+                        @endphp
+                        @if($pendingSection > 0)
+                            <span class="badge bg-danger badge-pill ms-auto">{{ $pendingSection }}</span>
+                        @endif
+                    </a>
+                </li>
                 @endif
-            </a>
-        </li>
-        @endif
 
-        {{-- Review & Agregasi GA --}}
-        @if(auth()->user()->isGa() || auth()->user()->isSuperAdmin())
-        <li class="sidebar-item">
-            <a href="{{ route('ga.review.index') }}" class="sidebar-link {{ request()->routeIs('ga.review.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-clipboard2-check"></i>
-                <span class="pc-mtext">Review Kebutuhan GA</span>
-                @php $pendingGa = \App\Models\ProcurementRequest::where('status','pending_ga')->count(); @endphp
-                @if($pendingGa > 0)
-                    <span class="badge bg-danger badge-pill ms-auto">{{ $pendingGa }}</span>
+                {{-- Review & Agregasi GA --}}
+                @if(auth()->user()->isGa() || auth()->user()->isSuperAdmin())
+                <li class="sidebar-item">
+                    <a href="{{ route('ga.review.index') }}" class="sidebar-link {{ request()->routeIs('ga.review.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-clipboard2-check"></i>
+                        <span class="pc-mtext">Review Kebutuhan GA</span>
+                        @php $pendingGa = \App\Models\ProcurementRequest::where('status','pending_ga')->count(); @endphp
+                        @if($pendingGa > 0)
+                            <span class="badge bg-danger badge-pill ms-auto">{{ $pendingGa }}</span>
+                        @endif
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('ga.requests.index') }}" class="sidebar-link {{ request()->routeIs('ga.requests.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-file-earmark-text"></i>
+                        <span class="pc-mtext">Riwayat PR</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('ga.receiving.index') }}" class="sidebar-link {{ request()->routeIs('ga.receiving.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-box-seam-fill"></i>
+                        <span class="pc-mtext">Terima &amp; Distribusi Barang</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('ga.checkout.index') }}" class="sidebar-link {{ request()->routeIs('ga.checkout.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-upc-scan"></i>
+                        <span class="pc-mtext">Serah Terima Barang</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('ga.budget.index') }}" class="sidebar-link {{ request()->routeIs('ga.budget.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-cash-coin"></i>
+                        <span class="pc-mtext">Budget</span>
+                    </a>
+                </li>
                 @endif
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="{{ route('ga.requests.index') }}" class="sidebar-link {{ request()->routeIs('ga.requests.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-file-earmark-text"></i>
-                <span class="pc-mtext">Riwayat PR</span>
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="{{ route('ga.receiving.index') }}" class="sidebar-link {{ request()->routeIs('ga.receiving.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-box-seam-fill"></i>
-                <span class="pc-mtext">Terima &amp; Distribusi Barang</span>
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="{{ route('ga.checkout.index') }}" class="sidebar-link {{ request()->routeIs('ga.checkout.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-upc-scan"></i>
-                <span class="pc-mtext">Serah Terima Barang</span>
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="{{ route('ga.budget.index') }}" class="sidebar-link {{ request()->routeIs('ga.budget.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-cash-coin"></i>
-                <span class="pc-mtext">Budget</span>
-            </a>
-        </li>
-        @endif
 
-        {{-- Approval Director untuk PR hasil agregasi GA --}}
-        @if(auth()->user()->isDirector() || auth()->user()->isSuperAdmin())
-        <li class="sidebar-item">
-            <a href="{{ route('director.purchase-requests.index') }}" class="sidebar-link {{ request()->routeIs('director.purchase-requests.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-award"></i>
-                <span class="pc-mtext">Konfirmasi PR (Direktur)</span>
-                @php $pendingDirector = \App\Models\PurchaseRequest::where('source','ga_aggregation')->where('status','sent_to_qad')->count(); @endphp
-                @if($pendingDirector > 0)
-                    <span class="badge bg-danger badge-pill ms-auto">{{ $pendingDirector }}</span>
+                {{-- Approval Director untuk PR hasil agregasi GA --}}
+                @if(auth()->user()->isDirector() || auth()->user()->isSuperAdmin())
+                <li class="sidebar-item">
+                    <a href="{{ route('director.purchase-requests.index') }}" class="sidebar-link {{ request()->routeIs('director.purchase-requests.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-award"></i>
+                        <span class="pc-mtext">Konfirmasi PR (Direktur)</span>
+                        @php $pendingDirector = \App\Models\PurchaseRequest::where('source','ga_aggregation')->where('status','sent_to_qad')->count(); @endphp
+                        @if($pendingDirector > 0)
+                            <span class="badge bg-danger badge-pill ms-auto">{{ $pendingDirector }}</span>
+                        @endif
+                    </a>
+                </li>
                 @endif
-            </a>
+            </ul>
         </li>
-        @endif
 
         {{-- Master data pengadaan (admin only) --}}
         @if(auth()->user()->isAdmin())
@@ -644,16 +692,26 @@
         @if(auth()->user()->isSuperAdmin())
         <li class="sidebar-caption">Pengaturan</li>
         <li class="sidebar-item">
-            <a href="{{ route('admin.qad-sync') }}" class="sidebar-link {{ request()->routeIs('admin.qad-sync') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-arrow-repeat"></i>
-                <span class="pc-mtext">Sync QAD</span>
+            <a href="#pengaturanMenu" class="sidebar-link {{ request()->routeIs('admin.qad-sync') || request()->routeIs('admin.qad-config.*') ? 'active' : '' }}"
+               data-bs-toggle="collapse" aria-expanded="{{ request()->routeIs('admin.qad-sync') || request()->routeIs('admin.qad-config.*') ? 'true' : 'false' }}">
+                <i class="pc-micon bi bi-gear-fill"></i>
+                <span class="pc-mtext">Pengaturan</span>
+                <i class="pc-arrow bi bi-chevron-right"></i>
             </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="{{ route('admin.qad-config.index') }}" class="sidebar-link {{ request()->routeIs('admin.qad-config.*') ? 'active' : '' }}">
-                <i class="pc-micon bi bi-diagram-3"></i>
-                <span class="pc-mtext">Konfigurasi QAD Dept</span>
-            </a>
+            <ul class="pc-submenu collapse list-unstyled {{ request()->routeIs('admin.qad-sync') || request()->routeIs('admin.qad-config.*') ? 'show' : '' }}" id="pengaturanMenu">
+                <li class="sidebar-item">
+                    <a href="{{ route('admin.qad-sync') }}" class="sidebar-link {{ request()->routeIs('admin.qad-sync') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-arrow-repeat"></i>
+                        <span class="pc-mtext">Sync QAD</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('admin.qad-config.index') }}" class="sidebar-link {{ request()->routeIs('admin.qad-config.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-diagram-3"></i>
+                        <span class="pc-mtext">Konfigurasi QAD Dept</span>
+                    </a>
+                </li>
+            </ul>
         </li>
         <li class="sidebar-item">
             <a href="#pengaturanTambahan" class="sidebar-link {{ request()->routeIs('admin.qad-settings.*') ? 'active' : '' }}"
@@ -684,19 +742,46 @@
         <i class="bi bi-list"></i>
     </button>
 
-    <div class="d-none d-md-block ms-2 text-muted" style="font-size:13px;">
-        <i class="bi bi-calendar3 me-1"></i>{{ now()->isoFormat('dddd, D MMMM Y') }}
-    </div>
+    {{-- Tanggal di header sengaja disembunyikan --}}
 
     <div class="ms-auto d-flex align-items-center gap-2">
         {{-- Notification --}}
-        @php $pendingCount = \App\Models\Transaction::where('status','pending')->where('trans_type','!=','goods_out')->count(); @endphp
+        @php
+            $pendingCount = \App\Models\Transaction::where('status','pending')->where('trans_type','!=','goods_out')->count();
+            $gaReviewCount = auth()->user()->isGa()
+                ? \App\Models\ProcurementRequest::where('status','pending_ga')->count() : 0;
+            $directorApprovalCount = auth()->user()->isDirector()
+                ? \App\Models\PurchaseRequest::where('status','sent_to_qad')->count() : 0;
+            $totalNotif = $pendingCount + $gaReviewCount + $directorApprovalCount;
+        @endphp
         <button class="header-notification-btn" data-bs-toggle="dropdown">
             <i class="bi bi-bell"></i>
-            @if($pendingCount > 0)<span class="badge-dot"></span>@endif
+            @if($totalNotif > 0)<span class="badge-dot"></span>@endif
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:280px;border-radius:12px;">
             <li><h6 class="dropdown-header">Notifikasi</h6></li>
+            @if($gaReviewCount > 0)
+            <li>
+                <a class="dropdown-item d-flex gap-2 align-items-center" href="{{ route('ga.review.index') }}">
+                    <span class="badge bg-info p-2"><i class="bi bi-person-badge"></i></span>
+                    <div>
+                        <div class="fw-semibold" style="font-size:13px;">{{ $gaReviewCount }} Permintaan Menunggu Review GA</div>
+                        <div class="text-muted" style="font-size:11px;">Klik untuk review &amp; agregasi</div>
+                    </div>
+                </a>
+            </li>
+            @endif
+            @if($directorApprovalCount > 0)
+            <li>
+                <a class="dropdown-item d-flex gap-2 align-items-center" href="{{ route('director.purchase-requests.index') }}">
+                    <span class="badge bg-success p-2"><i class="bi bi-person-workspace"></i></span>
+                    <div>
+                        <div class="fw-semibold" style="font-size:13px;">{{ $directorApprovalCount }} PR Menunggu Persetujuan Direktur</div>
+                        <div class="text-muted" style="font-size:11px;">Klik untuk approve/deny</div>
+                    </div>
+                </a>
+            </li>
+            @endif
             @if($pendingCount > 0)
             <li>
                 <a class="dropdown-item d-flex gap-2 align-items-center" href="{{ route('admin.approvals.index') }}">
@@ -707,7 +792,8 @@
                     </div>
                 </a>
             </li>
-            @else
+            @endif
+            @if($totalNotif === 0)
             <li><p class="text-center text-muted py-3 mb-0" style="font-size:13px;">Tidak ada notifikasi</p></li>
             @endif
         </ul>

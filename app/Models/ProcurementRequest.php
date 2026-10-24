@@ -2,19 +2,26 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDemoModeScope;
+use App\Models\Concerns\HasHiddenScope;
 use Illuminate\Database\Eloquent\Model;
 
 class ProcurementRequest extends Model
 {
+    use HasDemoModeScope, HasHiddenScope;
+
+    public string $demoModeDateColumn = 'req_date';
+
     protected $fillable = [
         'req_no', 'user_id', 'department_id', 'purpose', 'status', 'notes',
         'section_by', 'section_at', 'section_notes',
         'ga_by', 'ga_at', 'ga_notes',
         'aggregated_into_pr_id', 'aggregated_at',
-        'rejected_stage', 'reject_reason', 'req_date',
+        'rejected_stage', 'reject_reason', 'req_date', 'hidden_at',
     ];
 
     protected $casts = [
+        'hidden_at'     => 'datetime',
         'section_at'    => 'datetime',
         'ga_at'         => 'datetime',
         'aggregated_at' => 'datetime',
@@ -37,10 +44,21 @@ class ProcurementRequest extends Model
     public function getStatusLabel(): string
     {
         if ($this->status === 'aggregated' && $this->aggregatedPr) {
+            // "director_confirmed" dipecah jadi 2 label -- No. PO baru terisi
+            // belakangan lewat auto-sync (berjalan tiap 5 menit, atau tombol
+            // sync manual), BUKAN seketika saat Direktur approve. Status
+            // PurchaseRequest-nya sendiri tidak berubah di titik ini, cuma
+            // field qad_po_no yang terisi -- jadi labelnya yang perlu ikut
+            // membedakan supaya user tau PO-nya sudah terbit.
+            if ($this->aggregatedPr->status === 'director_confirmed') {
+                return $this->aggregatedPr->qad_po_no
+                    ? 'PO Diterbitkan (QAD)'
+                    : 'Disetujui Direktur';
+            }
+
             return match($this->aggregatedPr->status) {
                 'sent_to_qad'        => 'Terkirim ke QAD',
                 'send_failed'        => 'Gagal Kirim ke QAD',
-                'director_confirmed'  => 'Disetujui Direktur',
                 'director_denied'     => 'Ditolak Direktur (Direvisi GA)',
                 'received'            => 'Barang Diterima',
                 'partially_received'  => 'Diterima Sebagian',
@@ -99,6 +117,34 @@ class ProcurementRequest extends Model
      * Otorisasi approval per-record. Section HARUS berada di departemen yang sama
      * dengan request (dept head hanya boleh approve request departemennya sendiri).
      */
+    /**
+     * Jumlah hari kerja (Sabtu/Minggu dilewati) antara tanggal pengajuan dan
+     * tanggal barang diterima (PurchaseRequest hasil agregasi) -- null kalau
+     * belum diterima.
+     */
+    public function leadtimeWorkingDays(): ?int
+    {
+        $receivedAt = $this->aggregatedPr?->received_at;
+        if (!$receivedAt || !$this->req_date) {
+            return null;
+        }
+
+        $start = $this->req_date->copy();
+        $end   = $receivedAt->copy();
+        if ($end->lessThanOrEqualTo($start)) {
+            return 0;
+        }
+
+        $days = 0;
+        $cursor = $start->copy();
+        while ($cursor->lt($end)) {
+            $cursor->addDay();
+            if (!$cursor->isWeekend()) $days++;
+        }
+
+        return $days;
+    }
+
     public function canBeApprovedBy(User $user): bool
     {
         return match($this->status) {
@@ -145,7 +191,7 @@ class ProcurementRequest extends Model
             ],
             [
                 'key'      => 'ga',
-                'label'    => 'Review & Agregasi General Affair',
+                'label'    => 'Review General Affair',
                 'icon'     => 'bi-person-badge',
                 'done'     => !is_null($this->ga_at),
                 'rejected' => $this->status === 'rejected' && $this->rejected_stage === 'ga',
@@ -203,7 +249,11 @@ class ProcurementRequest extends Model
     public static function generateReqNo(): string
     {
         $date = now()->format('Ymd');
-        $last = self::whereDate('created_at', today())->count() + 1;
+        // withoutGlobalScopes() wajib di sini -- scope demo-mode/hidden bisa
+        // bikin hitungan "hari ini" salah (selalu 0) kalau tanggal hari ini
+        // di luar rentang demo, menyebabkan nomor urut tabrakan (unique
+        // constraint violation) begitu ada permintaan ke-2 di hari yang sama.
+        $last = self::withoutGlobalScopes()->whereDate('created_at', today())->count() + 1;
         return 'PR-ATK-' . $date . '-' . str_pad($last, 3, '0', STR_PAD_LEFT);
     }
 }

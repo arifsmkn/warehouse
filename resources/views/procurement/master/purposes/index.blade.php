@@ -97,7 +97,7 @@
 @push('scripts')
 <script>
 @if($purposes->count())
-$('#purposeTable').DataTable({ pageLength:15, language:{ search:'Cari:' } });
+$('#purposeTable').DataTable({ pageLength:15, lengthMenu:[10,15,25,50,100], language:{ search:'Cari:' } });
 @endif
 
 function editPurpose(id, name, active) {

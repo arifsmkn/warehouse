@@ -27,6 +27,7 @@ use App\Http\Controllers\ProcurementPurposeController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\UomController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 // ===== AUTH ROUTES =====
@@ -131,6 +132,14 @@ Route::middleware('auth')->group(function () {
             return view('admin.qad-sync');
         })->name('qad-sync');
 
+        // Push manual sync nomor PO (selain jalan otomatis tiap 5 menit via scheduler)
+        Route::post('/qad-sync/po-numbers', function () {
+            Artisan::call('qad:sync-po-numbers');
+            $lines   = array_filter(explode("\n", trim(Artisan::output())));
+            $summary = end($lines) ?: 'Sync PO manual selesai.';
+            return back()->with('success', $summary);
+        })->name('qad-sync.po-numbers');
+
         // Konfigurasi routing QAD per departemen (site/buyer/approver/dst)
         Route::get('/qad-config', [DepartmentQadConfigController::class, 'index'])->name('qad-config.index');
         Route::put('/qad-config/{department}', [DepartmentQadConfigController::class, 'update'])->name('qad-config.update');
@@ -169,6 +178,8 @@ Route::middleware('auth')->group(function () {
         Route::prefix('budget')->name('budget.')->group(function () {
             Route::get('/', [GaBudgetController::class, 'index'])->name('index');
             Route::post('/', [GaBudgetController::class, 'store'])->name('store');
+            Route::get('/template', [GaBudgetController::class, 'downloadTemplate'])->name('template');
+            Route::post('/import', [GaBudgetController::class, 'import'])->name('import');
             Route::put('/{budget}', [GaBudgetController::class, 'update'])->name('update');
             Route::post('/{budget}/topup', [GaBudgetController::class, 'topup'])->name('topup');
         });

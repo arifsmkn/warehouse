@@ -47,13 +47,13 @@
                                 {{ $item->description }}
                             </div>
                         </td>
-                        <td><span class="badge bg-secondary bg-opacity-15 text-secondary">{{ $item->category ?? '-' }}</span></td>
+                        <td><span class="badge bg-secondary text-white">{{ $item->category ?? '-' }}</span></td>
                         <td>{{ $item->unit ?? '-' }}</td>
                         <td>
                             @if($item->is_memo)
-                                <span class="badge bg-info bg-opacity-10 text-info">Memo</span>
+                                <span class="badge bg-info text-dark">Memo</span>
                             @else
-                                <span class="badge bg-primary bg-opacity-10 text-primary">QAD</span>
+                                <span class="badge bg-primary text-white">QAD</span>
                             @endif
                         </td>
                         <td>

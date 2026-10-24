@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ItemDepartmentBudget;
 use App\Models\ItemDepartmentBudgetTopup;
 use App\Models\ProcurementRequestDetail;
+use App\Support\DemoMode;
 use Illuminate\Support\Facades\DB;
 
 class BudgetService
@@ -49,6 +50,9 @@ class BudgetService
             ->where('procurement_requests.status', '!=', 'rejected')
             ->whereYear('procurement_requests.req_date', $year)
             ->whereMonth('procurement_requests.req_date', $month)
+            // Join manual ke tabel mentah -- TIDAK ikut global scope
+            // ProcurementRequest, harus ditambal manual di sini.
+            ->when(DemoMode::range(), fn($q, $range) => $q->whereBetween('procurement_requests.req_date', $range))
             ->select(DB::raw('COALESCE(SUM(procurement_request_details.qty * procurement_items.price), 0) as total'))
             ->value('total');
     }

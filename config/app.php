@@ -123,4 +123,23 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Demo Mode (tampilkan data dummy saja)
+    |--------------------------------------------------------------------------
+    |
+    | Kalau DEMO_MODE_FROM & DEMO_MODE_TO keduanya diisi, seluruh data riwayat
+    | (ProcurementRequest, PurchaseRequest, Transaction) otomatis difilter cuma
+    | yang tanggalnya ada di rentang ini -- dipakai supaya aplikasi cuma
+    | menampilkan data dummy presentasi QCC. Data ASLI tidak dihapus, cuma
+    | disembunyikan dari query selama rentang ini terisi. Kosongkan salah satu
+    | (atau keduanya) di .env lalu reload PHP-FPM untuk balikin ke normal.
+    |
+    */
+
+    'demo_mode' => [
+        'from' => env('DEMO_MODE_FROM'),
+        'to'   => env('DEMO_MODE_TO'),
+    ],
+
 ];

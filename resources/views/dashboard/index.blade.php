@@ -78,29 +78,66 @@
             </div>
         </div>
     </div>
-    <div class="col-6 col-xl-3">
-        <a href="{{ route('admin.min-stock.index') }}" class="card stat-card text-decoration-none">
-            <div class="d-flex align-items-center gap-3">
-                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-warning">{{ $stats['low_stock_items'] }}</div>
-                    <div class="stat-label">Stok Menipis</div>
-                </div>
-            </div>
-        </a>
-    </div>
     @endif
 </div>
 
 {{-- Budget vs Actual (departemen user) --}}
 @if(!empty($budgetHistory))
 <div class="card mb-4">
-    <div class="card-header"><i class="bi bi-graph-up me-2 text-primary"></i>Budget vs Actual — 12 Bulan Terakhir</div>
+    <div class="card-header"><i class="bi bi-graph-up me-2 text-primary"></i>
+        Budget vs Actual {{ auth()->user()->isAdmin() ? 'Semua Departemen' : '' }} — 12 Bulan Terakhir
+    </div>
     <div class="card-body">
         <div style="position:relative;height:280px;">
             <canvas id="budgetChart"></canvas>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Nilai Barang Diterima per Departemen per Bulan (GA & Admin) --}}
+@if(!empty($receivedValueTable))
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-table me-2 text-primary"></i>
+        Nilai Barang Diterima per Departemen — 12 Bulan Terakhir
+    </div>
+    <div class="card-body p-0" style="overflow-x:auto;">
+        <table class="table table-sm table-bordered mb-0" style="font-size:12.5px; white-space:nowrap;">
+            <thead class="table-light">
+                <tr>
+                    <th style="position:sticky;left:0;background:#f8f9fa;">Departemen</th>
+                    @foreach($receivedValueTable['months'] as $m)
+                        <th class="text-end">{{ $m }}</th>
+                    @endforeach
+                    <th class="text-end">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($receivedValueTable['data'] as $deptName => $byMonth)
+                    <tr>
+                        <td class="fw-semibold" style="position:sticky;left:0;background:#fff;">{{ $deptName }}</td>
+                        @php $rowTotal = 0; @endphp
+                        @foreach($receivedValueTable['months'] as $m)
+                            @php $v = $byMonth[$m] ?? 0; $rowTotal += $v; @endphp
+                            <td class="text-end">{{ $v > 0 ? 'Rp '.number_format($v,0,',','.') : '-' }}</td>
+                        @endforeach
+                        <td class="text-end fw-semibold">Rp {{ number_format($rowTotal,0,',','.') }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="{{ count($receivedValueTable['months']) + 2 }}" class="text-center text-muted py-3">Belum ada barang yang diterima.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-bar-chart me-2 text-primary"></i>
+        Total Nilai Barang Diterima per Departemen
+    </div>
+    <div class="card-body">
+        <div style="position:relative;height:320px;">
+            <canvas id="receivedValueByDeptChart"></canvas>
         </div>
     </div>
 </div>
@@ -122,7 +159,7 @@
     </div>
 
     {{-- Nilai Inventory --}}
-    <div class="col-6 col-xl-3">
+    <div class="col-6 col-xl-4">
         <div class="card stat-card" style="border-left:4px solid #4680ff;">
             <div class="d-flex align-items-center gap-3">
                 <div class="stat-icon bg-primary bg-opacity-10 text-primary">
@@ -139,26 +176,8 @@
         </div>
     </div>
 
-    {{-- Nilai Keluar Bulan Ini --}}
-    <div class="col-6 col-xl-3">
-        <div class="card stat-card" style="border-left:4px solid #dc3545;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="stat-icon bg-danger bg-opacity-10 text-danger">
-                    <i class="bi bi-box-arrow-up-right"></i>
-                </div>
-                <div>
-                    <div class="stat-label">Keluar Bulan Ini</div>
-                    <div class="stat-value text-danger" style="font-size:20px;">
-                        Rp {{ number_format($priceStats['goods_out_value'], 0, ',', '.') }}
-                    </div>
-                    <div class="stat-change text-muted">{{ now()->format('F Y') }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     {{-- Nilai Masuk Bulan Ini --}}
-    <div class="col-6 col-xl-3">
+    <div class="col-6 col-xl-4">
         <div class="card stat-card" style="border-left:4px solid #198754;">
             <div class="d-flex align-items-center gap-3">
                 <div class="stat-icon bg-success bg-opacity-10 text-success">
@@ -176,7 +195,7 @@
     </div>
 
     {{-- Nilai Pengembalian --}}
-    <div class="col-6 col-xl-3">
+    <div class="col-6 col-xl-4">
         <div class="card stat-card" style="border-left:4px solid #0dcaf0;">
             <div class="d-flex align-items-center gap-3">
                 <div class="stat-icon bg-info bg-opacity-10 text-info">
@@ -248,7 +267,9 @@
     <div class="col-lg-12">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-bar-chart me-2 text-primary"></i>Grafik Transaksi {{ now()->year }}</span>
+                <span><i class="bi bi-bar-chart me-2 text-primary"></i>
+                    {{ $isPlainUser ? 'Grafik Permintaan Saya ' . now()->year : 'Grafik Transaksi ' . now()->year }}
+                </span>
             </div>
             <div class="card-body">
                 <canvas id="transactionChart" height="90"></canvas>
@@ -328,6 +349,14 @@ new Chart(ctx, {
     data: {
         labels: {!! json_encode($chartLabels) !!},
         datasets: [
+            @if($isPlainUser)
+            {
+                label: 'Permintaan Saya',
+                data: {!! json_encode($chartMyRequests->values()) !!},
+                backgroundColor: 'rgba(70,128,255,.7)',
+                borderRadius: 4,
+            }
+            @else
             {
                 label: 'Keluar',
                 data: {!! json_encode($chartOut->values()) !!},
@@ -346,6 +375,7 @@ new Chart(ctx, {
                 backgroundColor: 'rgba(13,202,240,.7)',
                 borderRadius: 4,
             }
+            @endif
         ]
     },
     options: {
@@ -449,6 +479,38 @@ if (budgetChartEl) {
             plugins: {
                 legend: { position: 'top', labels: { boxWidth: 12, boxHeight: 12, font: { size: 12 } } },
                 tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${rupiah(ctx.parsed.y)}` } },
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#898781', font: { size: 11 } } },
+                y: { grid: { color: '#e1e0d9' }, ticks: { color: '#898781', font: { size: 11 }, callback: (v) => rupiah(v) } },
+            },
+        },
+    });
+}
+@endif
+
+@if(!empty($receivedValueTable))
+const receivedValueByDeptEl = document.getElementById('receivedValueByDeptChart');
+if (receivedValueByDeptEl) {
+    const rupiah = (v) => 'Rp ' + Number(v).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+    new Chart(receivedValueByDeptEl, {
+        type: 'bar',
+        data: {
+            labels: @json($receivedValueTable['totals']->keys()),
+            datasets: [{
+                label: 'Total Diterima',
+                data: @json($receivedValueTable['totals']->values()),
+                backgroundColor: '#4680ff',
+                borderRadius: 4,
+                maxBarThickness: 40,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (ctx) => rupiah(ctx.parsed.y) } },
             },
             scales: {
                 x: { grid: { display: false }, ticks: { color: '#898781', font: { size: 11 } } },

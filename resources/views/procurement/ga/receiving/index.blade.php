@@ -15,13 +15,20 @@
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead class="table-light">
-                    <tr><th>No. PR</th><th>No. Req QAD</th><th>Dibuat Oleh</th><th>Tanggal Kirim</th><th>Status</th><th width="120">Aksi</th></tr>
+                    <tr><th>No. PR</th><th>No. Req QAD</th><th>No. PO (QAD)</th><th>Dibuat Oleh</th><th>Tanggal Kirim</th><th>Status</th><th width="120">Aksi</th></tr>
                 </thead>
                 <tbody>
                     @forelse($purchaseRequests as $pr)
                     <tr>
                         <td><span class="fw-semibold text-primary">{{ $pr->pr_no }}</span></td>
                         <td>{{ $pr->qad_req_no ?? '-' }}</td>
+                        <td>
+                            @if($pr->qad_po_no)
+                                {{ $pr->qad_po_no }}
+                            @else
+                                <span class="text-muted fst-italic">Belum terdeteksi</span>
+                            @endif
+                        </td>
                         <td>{{ $pr->creator->name }}</td>
                         <td>{{ $pr->sent_to_qad_at?->format('d/m/Y H:i') ?? '-' }}</td>
                         <td><span class="badge bg-{{ $pr->getStatusBadge() }}">{{ $pr->getStatusLabel() }}</span></td>
@@ -32,7 +39,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center text-muted py-4">Tidak ada PR yang menunggu diterima</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">Tidak ada PR yang menunggu diterima</td></tr>
                     @endforelse
                 </tbody>
             </table>

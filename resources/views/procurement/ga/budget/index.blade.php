@@ -6,6 +6,17 @@
     <li class="breadcrumb-item active">Budget</li>
 @endsection
 
+@section('page-actions')
+<div class="d-flex gap-2">
+    <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#importBudgetModal">
+        <i class="bi bi-file-earmark-excel me-1"></i>Import Excel
+    </button>
+    <a href="{{ route('ga.budget.template') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-download me-1"></i>Template
+    </a>
+</div>
+@endsection
+
 @section('content')
 
 <div class="card mb-3">
@@ -49,7 +60,7 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Departemen</th><th>Item</th><th>Default</th><th>Top-up Bulan Ini</th>
+                        <th>Departemen</th><th>Kode Item</th><th>Nama Item</th><th>Default</th><th>Top-up Bulan Ini</th>
                         <th>Effective Budget</th><th>Actual</th><th>Sisa</th><th width="200"></th>
                     </tr>
                 </thead>
@@ -57,7 +68,8 @@
                     @forelse($budgets as $b)
                     <tr class="{{ $b->remaining < 0 ? 'table-danger' : '' }}">
                         <td>{{ $b->department->name }}</td>
-                        <td>{{ $b->procurementItem->name }} <span class="text-muted">({{ $b->procurementItem->item_code }})</span></td>
+                        <td class="fw-semibold">{{ $b->procurementItem->item_code }}</td>
+                        <td>{{ $b->procurementItem->name }}</td>
                         <td>Rp {{ number_format($b->default_budget, 0, ',', '.') }}</td>
                         <td>Rp {{ number_format($b->effective - $b->default_budget, 0, ',', '.') }}</td>
                         <td class="fw-semibold">Rp {{ number_format($b->effective, 0, ',', '.') }}</td>
@@ -73,7 +85,7 @@
                         </td>
                     </tr>
                     <tr class="collapse" id="topup-{{ $b->id }}">
-                        <td colspan="8" class="bg-light">
+                        <td colspan="9" class="bg-light">
                             <form action="{{ route('ga.budget.topup', $b->id) }}" method="POST" class="row g-2 align-items-end py-2">
                                 @csrf
                                 <div class="col-md-3">
@@ -91,10 +103,46 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="8" class="text-center text-muted py-4">Belum ada budget yang diset</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">Belum ada budget yang diset</td></tr>
                     @endforelse
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importBudgetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content" style="border-radius:16px;">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-file-earmark-excel me-2 text-success"></i>Import Budget</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('ga.budget.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info d-flex gap-2 py-2 mb-3">
+                        <i class="bi bi-info-circle"></i>
+                        <div style="font-size:13px;">
+                            File Excel/CSV harus memiliki kolom:
+                            <strong>departemen, kode_item, budget_default</strong>
+                            (kolom <strong>nama_item</strong> di template cuma buat referensi, tidak wajib & tidak dibaca sistem)
+                            <br><a href="{{ route('ga.budget.template') }}" class="text-info">Download template</a>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Pilih File</label>
+                        <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-upload me-1"></i>Import
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

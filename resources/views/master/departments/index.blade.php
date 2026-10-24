@@ -32,7 +32,7 @@
                     @forelse($departments as $i => $dept)
                     <tr>
                         <td>{{ $i + 1 }}</td>
-                        <td><span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">{{ $dept->code }}</span></td>
+                        <td><span class="fw-bold text-dark" style="font-size:15px;text-transform:uppercase;">{{ $dept->code }}</span></td>
                         <td>{{ $dept->name }}</td>
                         <td>
                             <span class="badge bg-secondary">{{ $dept->users_count }} user</span>
@@ -76,6 +76,7 @@
 @if($departments->count())
 $('#deptTable').DataTable({
     pageLength: 15,
+    lengthMenu: [10, 15, 25, 50, 100],
     language: {
         search: 'Cari:', paginate: { previous: '&laquo;', next: '&raquo;' },
         lengthMenu: 'Tampilkan _MENU_ data', info: 'Menampilkan _START_-_END_ dari _TOTAL_ data',

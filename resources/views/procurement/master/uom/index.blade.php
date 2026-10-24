@@ -45,7 +45,7 @@
                     <tbody>
                         @forelse($uoms as $uom)
                         <tr>
-                            <td><span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">{{ $uom->code }}</span></td>
+                            <td><span class="fw-bold text-dark" style="font-size:15px;text-transform:uppercase;">{{ $uom->code }}</span></td>
                             <td>{{ $uom->name }}</td>
                             <td><span class="badge bg-secondary">{{ $uom->procurement_items_count }} item</span></td>
                             <td><span class="badge bg-{{ $uom->is_active ? 'success' : 'secondary' }}">{{ $uom->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
@@ -108,7 +108,7 @@
 @push('scripts')
 <script>
 @if($uoms->count())
-$('#uomTable').DataTable({ pageLength:15, language:{ search:'Cari:' } });
+$('#uomTable').DataTable({ pageLength:15, lengthMenu:[10,15,25,50,100], language:{ search:'Cari:' } });
 @endif
 
 function editUom(id, code, name, active) {

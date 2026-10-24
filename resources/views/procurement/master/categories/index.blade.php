@@ -122,7 +122,7 @@
 @push('scripts')
 <script>
 @if($categories->count())
-$('#categoryTable').DataTable({ pageLength:15, language:{ search:'Cari:' } });
+$('#categoryTable').DataTable({ pageLength:15, lengthMenu:[10,15,25,50,100], language:{ search:'Cari:' } });
 @endif
 
 function editCategory(id, name, active, parentId) {

@@ -119,7 +119,7 @@
                             <td class="fw-bold text-primary">{{ number_format($detail->qty_needed, 2) }} {{ $detail->procurementItem->uom->code }}</td>
                             <td style="font-size:11px;">
                                 @foreach($detail->sources as $src)
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary me-1 mb-1">
+                                    <span class="badge bg-secondary text-white me-1 mb-1">
                                         {{ $src->department->name }}: {{ number_format($src->qty, 2) }}
                                     </span>
                                 @endforeach

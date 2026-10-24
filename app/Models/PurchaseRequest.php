@@ -2,15 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDemoModeScope;
+use App\Models\Concerns\HasHiddenScope;
 use Illuminate\Database\Eloquent\Model;
 
 class PurchaseRequest extends Model
 {
+    use HasDemoModeScope, HasHiddenScope;
+
+    public string $demoModeDateColumn = 'created_at';
+
     protected $fillable = [
         'pr_no', 'source', 'department_id', 'status', 'notes', 'created_by', 'submitted_at',
         'director_by', 'director_at', 'director_notes', 'reject_reason',
         'qad_req_no', 'qad_po_no', 'sent_to_qad_at', 'qad_sync_message',
-        'received_by', 'received_at', 'distributed_at',
+        'received_by', 'received_at', 'distributed_at', 'hidden_at',
     ];
 
     protected $casts = [
@@ -19,6 +25,7 @@ class PurchaseRequest extends Model
         'sent_to_qad_at' => 'datetime',
         'received_at'    => 'datetime',
         'distributed_at' => 'datetime',
+        'hidden_at'      => 'datetime',
     ];
 
     public function creator()    { return $this->belongsTo(User::class, 'created_by'); }
@@ -54,6 +61,14 @@ class PurchaseRequest extends Model
 
     public function getStatusLabel(): string
     {
+        // No. PO baru terisi belakangan lewat auto-sync (bukan seketika saat
+        // Direktur approve) -- status mentahnya tidak berubah di titik ini,
+        // jadi labelnya yang perlu dibedakan biar user tau PO-nya sudah
+        // terbit. Lihat catatan sama di ProcurementRequest::getStatusLabel().
+        if ($this->status === 'director_confirmed' && $this->qad_po_no) {
+            return 'PO Diterbitkan (QAD)';
+        }
+
         return match($this->status) {
             'draft'              => 'Draft',
             'submitted'          => 'Submitted',
@@ -91,7 +106,8 @@ class PurchaseRequest extends Model
     public static function generatePRNo(): string
     {
         $date = now()->format('Ymd');
-        $last = self::whereDate('created_at', today())->count() + 1;
+        // withoutGlobalScopes() wajib -- lihat catatan di ProcurementRequest::generateReqNo().
+        $last = self::withoutGlobalScopes()->whereDate('created_at', today())->count() + 1;
         return 'PR' . $date . str_pad($last, 4, '0', STR_PAD_LEFT);
     }
 }

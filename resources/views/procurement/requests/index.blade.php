@@ -49,7 +49,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>No. Permintaan</th><th>Keperluan</th><th>Departemen</th>
-                        <th>Item</th><th>No. PO</th><th>Tanggal</th><th>Status</th><th></th>
+                        <th>Item</th><th>No. PR</th><th>No. PO</th><th>Tanggal</th><th>Tanggal Selesai</th><th>Leadtime</th><th>Status</th><th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,8 +59,12 @@
                         <td>{{ Str::limit($req->purpose, 40) }}</td>
                         <td>{{ $req->department?->name ?? '-' }}</td>
                         <td><span class="badge bg-secondary">{{ $req->details->count() }} item</span></td>
+                        <td>{{ $req->aggregatedPr?->qad_req_no ?? '-' }}</td>
                         <td>{{ $req->aggregatedPr?->qad_po_no ?? '-' }}</td>
-                        <td>{{ $req->req_date->format('d/m/Y') }}</td>
+                        <td data-order="{{ $req->req_date->format('Y-m-d') }}">{{ $req->req_date->format('d/m/Y') }}</td>
+                        @php $receivedAt = $req->aggregatedPr?->received_at; $leadtime = $req->leadtimeWorkingDays(); @endphp
+                        <td data-order="{{ $receivedAt?->format('Y-m-d') ?? '' }}">{{ $receivedAt?->format('d/m/Y') ?? '-' }}</td>
+                        <td>{{ $leadtime !== null ? $leadtime.' HK' : '-' }}</td>
                         <td><span class="badge bg-{{ $req->getStatusBadge() }}">{{ $req->getStatusLabel() }}</span></td>
                         <td>
                             <a href="{{ route('procurement.requests.show', $req->id) }}" class="btn btn-sm btn-light">
@@ -70,7 +74,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-5">
+                        <td colspan="11" class="text-center text-muted py-5">
                             <i class="bi bi-inbox" style="font-size:32px;"></i>
                             <p class="mt-2 mb-3">Belum ada permintaan pengadaan</p>
                             <a href="{{ route('procurement.requests.create') }}" class="btn btn-primary btn-sm">
@@ -90,7 +94,7 @@
 @push('scripts')
 <script>
 @if($requests->count())
-$('#reqTable').DataTable({ paging:false, info:false, order:[[5,'desc']], language:{ search:'Cari:' }, columnDefs:[{orderable:false,targets:[7]}] });
+$('#reqTable').DataTable({ paging:false, info:false, order:[[6,'desc']], language:{ search:'Cari:' }, columnDefs:[{orderable:false,targets:[10]}] });
 @endif
 </script>
 @endpush

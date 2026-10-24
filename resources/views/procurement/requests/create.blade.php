@@ -139,7 +139,7 @@
     </div>
 
     {{-- ===== KANAN: Info + Cart ===== --}}
-    <div class="sticky-top" style="top:86px;">
+    <div class="sticky-top" style="top:86px;max-height:calc(100vh - 100px);overflow-y:auto;">
 
         {{-- Info Permintaan --}}
         <div class="card mb-3">
@@ -182,7 +182,7 @@
                 <span class="badge bg-primary rounded-pill" id="cartBadge">0</span>
             </div>
 
-            <div class="card-body p-0" id="cartBody" style="max-height:320px;overflow-y:auto;">
+            <div class="card-body p-0" id="cartBody">
                 <div id="emptyCart" class="text-center text-muted py-4" style="font-size:13px;">
                     <i class="bi bi-cart" style="font-size:28px;"></i>
                     <p class="mt-2 mb-0">Klik item untuk menambahkan</p>
@@ -200,7 +200,7 @@
                     <div class="d-flex gap-1 align-items-center flex-wrap">
                         <span class="badge bg-secondary px-2">Anda</span>
                         <i class="bi bi-arrow-right text-muted"></i>
-                        <span class="badge bg-info px-2">Section</span>
+                        <span class="badge bg-info px-2">Atasan</span>
                         <i class="bi bi-arrow-right text-muted"></i>
                         <span class="badge bg-primary px-2">GA</span>
                         <i class="bi bi-arrow-right text-muted"></i>
@@ -245,7 +245,7 @@
                             <input type="number" id="modalQty" value="1" min="1" step="0.01" oninput="checkModalBudget()">
                             <button type="button" onclick="modalAdjustQty(1)">+</button>
                         </div>
-                        <span class="badge bg-info bg-opacity-10 text-info fw-semibold" id="modalUom"></span>
+                        <span class="badge bg-info text-dark fw-semibold" id="modalUom"></span>
                     </div>
 
                     <input type="text" id="modalNotes" class="form-control form-control-sm mb-3" placeholder="Keterangan (opsional)">
@@ -273,6 +273,38 @@ let currentItem = null;
 let activeCategory = 'all';
 let categoryTree = [];
 
+// ===== KERANJANG: PERSISTENCE (localStorage) =====
+// Supaya keranjang tidak hilang kalau browser di-refresh sebelum submit.
+// Di-scope per user (bukan per department) karena department otomatis ikut user,
+// dan localStorage sifatnya per-browser -- kalau komputer dipakai bareng-bareng
+// tetap aman tidak ketuker punya user lain.
+const CART_STORAGE_KEY = 'procurement_cart_draft_{{ auth()->id() }}';
+
+function saveCartToStorage() {
+    try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+    } catch (e) { /* localStorage tidak tersedia (mis. private mode) -- abaikan */ }
+}
+
+function loadCartFromStorage() {
+    try {
+        const raw = localStorage.getItem(CART_STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (!Array.isArray(saved)) return;
+
+        // Rehydrate tiap baris dari allItems yang baru difetch (harga/sisa budget
+        // bisa saja sudah berubah sejak terakhir disimpan) -- item yang sudah
+        // tidak ada/nonaktif otomatis di-drop, bukan error.
+        cartItems = saved
+            .map(saved => {
+                const fresh = allItems.find(i => i.id === saved.id);
+                return fresh ? { ...fresh, qty: saved.qty, notes: saved.notes || '' } : null;
+            })
+            .filter(Boolean);
+    } catch (e) { /* data korup / localStorage error -- mulai dari keranjang kosong */ }
+}
+
 // ===== INIT =====
 async function loadCatalog() {
     const [itemsRes, catsRes] = await Promise.all([
@@ -282,8 +314,10 @@ async function loadCatalog() {
     allItems = await itemsRes.json();
     categoryTree = await catsRes.json();
 
+    loadCartFromStorage();
     renderCategoryTree();
     renderGrid(allItems);
+    renderCart();
 }
 
 // ===== CATEGORY TREE =====
@@ -383,10 +417,18 @@ document.getElementById('searchInput').addEventListener('input', function() {
 // ===== BUDGET =====
 function budgetBadge(item) {
     if (item.remaining_budget === null || item.remaining_budget === undefined) return '';
-    const over = item.remaining_budget <= 0;
+
+    // Kalau item ini sudah ada di keranjang, sisa budget yang ditampilkan di kartu
+    // harus ikut dikurangi qty yang sudah dimasukkan — biar konsisten dengan
+    // peringatan "Melebihi Budget" yang sudah muncul di keranjang untuk item yang sama.
+    const inCart = cartItems.find(c => c.id === item.id);
+    const cartCost = inCart ? inCart.qty * (item.price || 0) : 0;
+    const adjustedRemaining = item.remaining_budget - cartCost;
+
+    const over = adjustedRemaining <= 0;
     return `<div class="mt-1" style="font-size:9px;">
         <span class="badge ${over ? 'bg-danger' : 'bg-success'} bg-opacity-10 ${over ? 'text-danger' : 'text-success'}">
-            Sisa Budget: Rp ${Math.round(item.remaining_budget).toLocaleString('id-ID')}
+            Sisa Budget: Rp ${Math.round(adjustedRemaining).toLocaleString('id-ID')}
         </span>
     </div>`;
 }
@@ -418,7 +460,7 @@ function renderGrid(items) {
                     <div class="item-name text-truncate" title="${item.name}">${item.name}</div>
                     <div class="item-code mb-1">${item.item_code}</div>
                     <div class="d-flex justify-content-end align-items-center mb-1">
-                        <span class="badge bg-info bg-opacity-10 text-info" style="font-size:10px;">${item.uom_code}</span>
+                        <span class="badge bg-info text-dark" style="font-size:10px;">${item.uom_code}</span>
                     </div>
                     <div class="fw-bold text-success" style="font-size:12px;">
                         ${item.price > 0
@@ -491,6 +533,7 @@ function addFromModal() {
     }
 
     bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+    saveCartToStorage();
     renderCart();
     refreshGrid();
 }
@@ -503,7 +546,7 @@ function cartAmountHtml(item) {
     const hasBudget = item.remaining_budget !== null && item.remaining_budget !== undefined;
     const overBudget = hasBudget && cost > item.remaining_budget;
     const badgeHtml = overBudget
-        ? `<span class="badge bg-danger bg-opacity-10 text-danger mt-1" style="font-size:9px;">
+        ? `<span class="badge bg-danger text-white mt-1" style="font-size:9px;">
                <i class="bi bi-exclamation-triangle-fill me-1"></i>Melebihi Budget
            </span>`
         : '';
@@ -564,7 +607,7 @@ function renderCart() {
                             onclick="event.preventDefault();changeCartQty(${idx},1)">+</button>
                 </div>
                 <input type="text" value="${item.notes || ''}" placeholder="Ket..."
-                       oninput="cartItems[${idx}].notes=this.value"
+                       oninput="cartItems[${idx}].notes=this.value;saveCartToStorage()"
                        class="form-control form-control-sm flex-grow-1"
                        style="font-size:11px;height:26px;">
             </div>
@@ -575,6 +618,7 @@ function renderCart() {
 function changeCartQty(idx, delta) {
     if (!cartItems[idx]) return;
     cartItems[idx].qty = Math.max(0.01, Math.round((parseFloat(cartItems[idx].qty) + delta) * 100) / 100);
+    saveCartToStorage();
     renderCart();
     refreshGrid();
 }
@@ -582,6 +626,7 @@ function changeCartQty(idx, delta) {
 function changeCartQtyDirect(idx, val) {
     if (!cartItems[idx]) return;
     cartItems[idx].qty = Math.max(0.01, parseFloat(val) || 1);
+    saveCartToStorage();
     // Update total + badge budget baris ini saja, jangan re-render penuh biar fokus input tidak hilang
     const total = cartItems.reduce((s,i) => s + ((i.price||0)*i.qty), 0);
     document.getElementById('cartTotal').textContent = total > 0 ? 'Rp ' + total.toLocaleString('id-ID') : 'Rp —';
@@ -591,6 +636,7 @@ function changeCartQtyDirect(idx, val) {
 
 function removeFromCart(idx) {
     cartItems.splice(idx, 1);
+    saveCartToStorage();
     renderCart();
     refreshGrid();
 }
@@ -622,7 +668,11 @@ document.getElementById('procurementForm').addEventListener('submit', function(e
     if (cartItems.length === 0) {
         e.preventDefault();
         Swal.fire({ icon:'warning', title:'Keranjang Kosong', text:'Tambahkan minimal 1 item.' });
+        return;
     }
+    // Submit (Ajukan Permintaan / Simpan Draft) berhasil divalidasi -- bersihkan
+    // draft keranjang di localStorage biar tidak nyangkut buat permintaan berikutnya.
+    try { localStorage.removeItem(CART_STORAGE_KEY); } catch (e) {}
 });
 
 // ===== LOAD =====

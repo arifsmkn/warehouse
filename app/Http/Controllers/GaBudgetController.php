@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ItemDepartmentBudgetTemplateExport;
+use App\Imports\ItemDepartmentBudgetImport;
 use App\Models\Department;
 use App\Models\ItemDepartmentBudget;
 use App\Models\ItemDepartmentBudgetTopup;
 use App\Models\ProcurementItem;
 use App\Services\BudgetService;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class GaBudgetController extends Controller
 {
@@ -45,6 +48,21 @@ class GaBudgetController extends Controller
         );
 
         return back()->with('success', "Budget default untuk {$budget->procurementItem->name} / {$budget->department->name} disimpan.");
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new ItemDepartmentBudgetTemplateExport(), 'template_budget_departemen.xlsx');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:5120']);
+
+        $import = new ItemDepartmentBudgetImport();
+        Excel::import($import, $request->file('file'));
+
+        return back()->with('success', "Import selesai: {$import->imported} budget berhasil, {$import->skipped} dilewati.");
     }
 
     public function update(Request $request, ItemDepartmentBudget $budget)

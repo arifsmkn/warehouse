@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ItemDepartmentBudget;
 use App\Models\ProcurementItem;
 use App\Models\ProcurementRequest;
 use App\Models\ProcurementRequestAttachment;
@@ -162,8 +163,11 @@ class ProcurementRequestController extends Controller
         }
         $procurementRequest->load(['user', 'department', 'details.item.uom', 'details.uom', 'sectionBy', 'gaBy', 'aggregatedPr.directorBy', 'aggregatedPr.receivedBy', 'attachments']);
 
+        // Budget vs Actual = total budget SELURUH departemen (sama seperti di Dashboard),
+        // bukan cuma item yang ada di PR ini -- biar konsisten dengan tampilan dashboard.
         $budgetHistory = [];
-        $itemIds = $procurementRequest->details->pluck('item_id')->unique();
+        $itemIds = ItemDepartmentBudget::where('department_id', $procurementRequest->department_id)
+            ->pluck('procurement_item_id');
         if ($procurementRequest->department_id && $itemIds->isNotEmpty()) {
             for ($i = 11; $i >= 0; $i--) {
                 $date = now()->subMonths($i);

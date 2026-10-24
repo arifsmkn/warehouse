@@ -130,6 +130,7 @@
 @if($users->count())
 $('#userTable').DataTable({
     pageLength: 15,
+    lengthMenu: [10, 15, 25, 50, 100],
     language: {
         search: 'Cari:', paginate: { previous: '&laquo;', next: '&raquo;' },
         lengthMenu: 'Tampilkan _MENU_ data', info: 'Menampilkan _START_-_END_ dari _TOTAL_ data',

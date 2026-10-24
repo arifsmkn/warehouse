@@ -34,6 +34,23 @@
 
     <div class="col-lg-6">
         <div class="card">
+            <div class="card-header"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Sync No. PO dari Requisition</div>
+            <div class="card-body">
+                <p class="text-muted" style="font-size:13px;">
+                    Mengecek ulang ke QAD (lewat WSA <code>SDI_getPRtoPO_</code>) apakah PR yang sudah terkirim sudah punya nomor PO, lalu mengisinya otomatis — biasanya jalan sendiri tiap <strong>5 menit</strong>. Pakai tombol ini kalau mau cek sekarang juga tanpa menunggu.
+                </p>
+                <form action="{{ route('admin.qad-sync.po-numbers') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-cloud-arrow-down me-2"></i>Push Sync No. PO Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
             <div class="card-header"><i class="bi bi-gear me-2 text-primary"></i>Konfigurasi QXtend</div>
             <div class="card-body">
                 <table class="table table-sm table-borderless">

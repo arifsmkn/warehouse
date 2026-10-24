@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ItemDepartmentBudget;
 use App\Models\PurchaseRequest;
 use App\Models\User;
 use App\Notifications\PrDeniedNotification;
@@ -46,8 +47,10 @@ class DirectorPurchaseRequestController extends Controller
             ->unique('id')
             ->values();
 
-        // Budget vs actual 12 bulan terakhir, dijumlah semua item di PR ini, untuk departemen ini.
-        $itemIds = $purchaseRequest->details->pluck('procurement_item_id')->unique();
+        // Budget vs Actual = total budget SELURUH departemen (sama seperti di Dashboard),
+        // bukan cuma item yang ada di PR ini -- biar konsisten dengan tampilan dashboard.
+        $itemIds = ItemDepartmentBudget::where('department_id', $purchaseRequest->department_id)
+            ->pluck('procurement_item_id');
         $budgetHistory = [];
         if ($purchaseRequest->department_id && $itemIds->isNotEmpty()) {
             for ($i = 11; $i >= 0; $i--) {

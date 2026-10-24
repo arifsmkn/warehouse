@@ -33,7 +33,7 @@
                     @forelse($transactions as $trx)
                     <tr>
                         <td><span class="fw-semibold text-primary">{{ $trx->trans_no }}</span></td>
-                        <td><span class="badge bg-info bg-opacity-10 text-info">{{ $trx->qad_receipt_no ?? '-' }}</span></td>
+                        <td><span class="badge bg-info text-dark">{{ $trx->qad_receipt_no ?? '-' }}</span></td>
                         <td>{{ $trx->trans_date->format('d/m/Y') }}</td>
                         <td>{{ $trx->user->name }}</td>
                         <td><span class="badge bg-secondary">{{ $trx->details->count() }} item</span></td>

@@ -19,9 +19,36 @@ class GaCheckoutController extends Controller
 
     public function selectDepartment()
     {
-        $departments = Department::where('is_active', true)
-            ->withCount(['departmentStocks as items_available' => fn($q) => $q->where('qty_held', '>', 0)])
-            ->get();
+        $departments = Department::where('is_active', true)->get();
+
+        // "Item tersedia" = item yang stoknya ada DAN masih ada karyawan di
+        // departemen itu yang benar-benar belum diserahkan (bukan cuma stok
+        // fisik ada) -- biar angkanya sama dengan yang muncul begitu GA
+        // masuk ke halaman karyawan spesifik (lihat show(), yang filter
+        // remainingQty() > 0).
+        foreach ($departments as $dept) {
+            $heldItemIds = DepartmentStock::where('department_id', $dept->id)
+                ->where('qty_held', '>', 0)
+                ->pluck('item_id');
+
+            if ($heldItemIds->isEmpty()) {
+                $dept->items_available = 0;
+                continue;
+            }
+
+            $outstandingItemCodes = ProcurementRequestDetail::whereHas('request', function ($q) use ($dept) {
+                    $q->where('department_id', $dept->id)->where('status', 'aggregated');
+                })
+                ->with('item')
+                ->get()
+                ->filter(fn($d) => $d->remainingQty() > 0)
+                ->map(fn($d) => $d->item->item_code)
+                ->unique();
+
+            $heldItemCodes = Item::whereIn('id', $heldItemIds)->pluck('item_code');
+
+            $dept->items_available = $heldItemCodes->intersect($outstandingItemCodes)->count();
+        }
 
         return view('procurement.ga.checkout.select-department', compact('departments'));
     }
