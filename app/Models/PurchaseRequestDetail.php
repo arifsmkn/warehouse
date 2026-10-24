@@ -8,12 +8,14 @@ class PurchaseRequestDetail extends Model
 {
     protected $fillable = [
         'pr_id', 'item_id', 'procurement_item_id', 'qty_needed', 'current_stock', 'min_stock', 'notes',
+        'qty_received_confirmed',
     ];
 
     protected $casts = [
-        'qty_needed'    => 'float',
-        'current_stock' => 'float',
-        'min_stock'     => 'float',
+        'qty_needed'              => 'float',
+        'current_stock'           => 'float',
+        'min_stock'               => 'float',
+        'qty_received_confirmed'  => 'float',
     ];
 
     public function purchaseRequest()

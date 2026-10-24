@@ -194,6 +194,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [GaReceivingController::class, 'index'])->name('index');
             Route::get('/{purchaseRequest}', [GaReceivingController::class, 'create'])->name('create');
             Route::post('/{purchaseRequest}', [GaReceivingController::class, 'store'])->name('store');
+            Route::post('/{purchaseRequest}/sync-from-qad', [GaReceivingController::class, 'syncFromQad'])->name('sync-from-qad');
         });
 
         Route::prefix('checkout')->name('checkout.')->group(function () {

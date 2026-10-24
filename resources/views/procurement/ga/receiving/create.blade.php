@@ -100,4 +100,27 @@
         </div>
     </div>
 </form>
+
+<div class="card mt-3 border-warning">
+    <div class="card-body">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-arrow-repeat text-warning" style="font-size:22px;"></i>
+            <div class="flex-grow-1">
+                <div class="fw-semibold">API penerimaan ke QAD sedang bermasalah?</div>
+                <p class="text-muted mb-2" style="font-size:12px;">
+                    Kalau tombol "Konfirmasi Terima" di atas selalu gagal padahal barang sudah diterima langsung di QAD (native),
+                    terima barangnya di QAD seperti biasa lalu klik tombol ini — qty yang BENERAN tercatat di QAD akan dibaca ulang
+                    dan dikreditkan ke stok lokal, <strong>tanpa</strong> mengirim apa pun lagi ke QAD.
+                </p>
+                <form action="{{ route('ga.receiving.sync-from-qad', $purchaseRequest->id) }}" method="POST"
+                      onsubmit="return confirm('Baca ulang qty yang sudah diterima di QAD dan kreditkan ke stok lokal?')">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-arrow-repeat me-1"></i>Sinkronkan dari QAD
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

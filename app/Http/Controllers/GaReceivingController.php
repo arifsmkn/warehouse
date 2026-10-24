@@ -163,7 +163,7 @@ class GaReceivingController extends Controller
 
         $gaDeptId = Department::where('code', 'GA')->value('id');
 
-        DB::transaction(function () use ($request, $purchaseRequest, $gaDeptId, $qadResult, $newStatus) {
+        DB::transaction(function () use ($request, $purchaseRequest, $gaDeptId, $qadResult, $newStatus, $afterByLine) {
             $trx = Transaction::create([
                 'trans_no'       => Transaction::generateTransNo('goods_in'),
                 'trans_type'     => 'goods_in',
@@ -185,6 +185,14 @@ class GaReceivingController extends Controller
                 if (!$detail) continue;
 
                 $item = $this->stockService->resolveOrCreateWarehouseItem($detail->procurementItem);
+
+                // Simpan cumulative QAD yang sudah dikonfirmasi di baris ini --
+                // dipakai fitur "Sinkronkan dari QAD" biar tidak mengkredit ulang
+                // qty yang sudah dikreditkan lewat jalur submit biasa ini.
+                $lineNo = $purchaseRequest->details->search(fn($d) => $d->id === $detail->id) + 1;
+                if (isset($afterByLine[$lineNo])) {
+                    $detail->update(['qty_received_confirmed' => $afterByLine[$lineNo]]);
+                }
 
                 $trx->details()->create([
                     'item_id'       => $item->id,
@@ -217,5 +225,96 @@ class GaReceivingController extends Controller
             : "Penerimaan PR {$purchaseRequest->pr_no} dicatat ke QAD dan barang sudah dialokasikan ke departemen.";
 
         return redirect()->route('ga.receiving.index')->with('success', $message);
+    }
+
+    /**
+     * Jalan keluar sementara selama API receivePurchaseOrder (SDI_eKanbanGR)
+     * terbukti tidak selalu benar-benar memposting qty di QAD meski
+     * membalas sukses: GA terima barang langsung di QAD (native), lalu
+     * tombol ini membaca ulang qty yang BENERAN tercatat di QAD (WSA, yang
+     * terbukti akurat) dan mengkreditkan selisihnya ke stok lokal --
+     * TANPA mengirim apa pun ke QAD (tidak memanggil receivePurchaseOrder
+     * sama sekali, jadi tidak mungkin kena bug yang sama).
+     */
+    public function syncFromQad(PurchaseRequest $purchaseRequest)
+    {
+        if ($purchaseRequest->source !== 'ga_aggregation' || !in_array($purchaseRequest->status, ['director_confirmed', 'partially_received'])) {
+            return back()->with('error', 'PR ini belum siap untuk disinkronkan.');
+        }
+        if (!$purchaseRequest->qad_req_no) {
+            return back()->with('error', 'PR ini belum punya No. Requisition QAD.');
+        }
+
+        $purchaseRequest->load('details.procurementItem', 'details.sources');
+
+        $byLine = $this->qadSoap->getReceivedQtyByLine($purchaseRequest->qad_req_no);
+        if (empty($byLine)) {
+            return back()->with('error', 'Gagal mengambil data dari QAD (WSA) — coba lagi beberapa saat lagi.');
+        }
+
+        // Selisih (cumulative QAD sekarang - yang sudah pernah kita kreditkan
+        // sebelumnya) per baris -- cuma baris yang benar-benar nambah yang
+        // diproses, baris yang belum berubah dilewati begitu saja.
+        $deltas = [];
+        foreach ($purchaseRequest->details as $i => $detail) {
+            $cumulative = min($byLine[$i + 1] ?? 0, $detail->qty_needed);
+            $delta = $cumulative - $detail->qty_received_confirmed;
+            if ($delta > 0.0001) {
+                $deltas[$detail->id] = ['delta' => $delta, 'cumulative' => $cumulative, 'detail' => $detail];
+            }
+        }
+
+        if (empty($deltas)) {
+            return back()->with('error', 'Belum ada qty baru di QAD dibanding yang sudah tercatat di aplikasi ini.');
+        }
+
+        $gaDeptId = Department::where('code', 'GA')->value('id');
+
+        DB::transaction(function () use ($purchaseRequest, $deltas, $gaDeptId) {
+            $trx = Transaction::create([
+                'trans_no'      => Transaction::generateTransNo('goods_in'),
+                'trans_type'    => 'goods_in',
+                'user_id'       => auth()->id(),
+                'department_id' => $gaDeptId,
+                'status'        => 'completed',
+                'approved_by'   => auth()->id(),
+                'approved_at'   => now(),
+                'notes'         => "Sinkronisasi dari QAD (tanpa kirim ulang) untuk PR {$purchaseRequest->pr_no} -- barang diterima langsung di QAD native karena API receiving sedang bermasalah.",
+                'trans_date'    => today(),
+            ]);
+
+            foreach ($deltas as $detailId => ['delta' => $qty, 'cumulative' => $cumulative, 'detail' => $detail]) {
+                $item = $this->stockService->resolveOrCreateWarehouseItem($detail->procurementItem);
+
+                $trx->details()->create([
+                    'item_id'       => $item->id,
+                    'qty_requested' => $detail->qty_needed,
+                    'qty_approved'  => $qty,
+                ]);
+
+                $ratio = $detail->qty_needed > 0 ? $qty / $detail->qty_needed : 0;
+                foreach ($detail->sources as $source) {
+                    $deptQty = round($source->qty * $ratio, 2);
+                    if ($deptQty <= 0) continue;
+                    $this->stockService->creditDepartmentStock($item, $source->department_id, $deptQty);
+                }
+
+                $detail->update(['qty_received_confirmed' => $cumulative]);
+            }
+
+            $fullyReceived = \App\Models\PurchaseRequestDetail::where('pr_id', $purchaseRequest->id)
+                ->get()
+                ->every(fn($d) => $d->qty_received_confirmed >= $d->qty_needed);
+
+            $purchaseRequest->update([
+                'status'           => $fullyReceived ? 'distributing' : 'partially_received',
+                'received_by'      => auth()->id(),
+                'received_at'      => now(),
+                'distributed_at'   => now(),
+                'qad_sync_message' => 'Disinkronkan dari QAD (' . now()->format('d/m/Y H:i') . ') tanpa kirim ulang ke QAD.',
+            ]);
+        });
+
+        return redirect()->route('ga.receiving.index')->with('success', "PR {$purchaseRequest->pr_no} berhasil disinkronkan dari data QAD.");
     }
 }
