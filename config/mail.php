@@ -115,4 +115,18 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Trial Redirect
+    |--------------------------------------------------------------------------
+    |
+    | Kalau diisi, SEMUA email notifikasi (Section/GA/Direktur/dst) dialihkan
+    | ke alamat ini apa pun penerima aslinya -- dipakai selama masa trial
+    | supaya tidak ada staf asli yang kebagian email percobaan. Kosongkan
+    | begitu siap dipakai live.
+    |
+    */
+
+    'trial_redirect_to' => env('MAIL_TRIAL_REDIRECT_TO'),
+
 ];
