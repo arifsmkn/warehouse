@@ -121,11 +121,14 @@
         {{-- Search --}}
         <div class="card mb-3">
             <div class="card-body pb-2">
-                <div class="search-wrapper mb-3">
+                <div class="search-wrapper mb-2">
                     <i class="bi bi-search"></i>
                     <input type="text" id="searchInput" class="form-control"
                            placeholder="Cari nama atau kode item ATK...">
                 </div>
+                <button type="button" class="btn btn-outline-primary btn-sm w-100 mb-3" data-bs-toggle="modal" data-bs-target="#memoModal">
+                    <i class="bi bi-plus-circle me-1"></i>Item Tidak Ditemukan? Usulkan Item Baru
+                </button>
             </div>
         </div>
 
@@ -259,6 +262,46 @@
                         <i class="bi bi-cart-plus me-1"></i>Tambah ke Keranjang
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Usulan Item Baru (Memo) Modal --}}
+<div class="modal fade" id="memoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2 text-primary"></i>Usulkan Item Baru</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" style="font-size:12px;">Item ini belum ada di katalog — nanti langsung masuk keranjang dengan harga sementara Rp 0, GA akan melengkapi harga & kategorinya setelah permintaan ini diajukan.</p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:12px;">Nama Item <span class="text-danger">*</span></label>
+                    <input type="text" id="memoName" class="form-control" placeholder="Contoh: Map Plastik Warna Merah">
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold" style="font-size:12px;">UOM <span class="text-danger">*</span></label>
+                        <select id="memoUom" class="form-select">
+                            <option value="">-- Pilih --</option>
+                            @foreach($uoms as $uom)
+                                <option value="{{ $uom->id }}" data-code="{{ $uom->code }}">{{ $uom->code }} - {{ $uom->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold" style="font-size:12px;">Qty <span class="text-danger">*</span></label>
+                        <input type="number" id="memoQty" class="form-control" value="1" min="0.01" step="0.01">
+                    </div>
+                </div>
+                <div id="memoError" class="alert alert-danger py-2 mb-0" style="display:none;font-size:12px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-100" onclick="submitMemoItem()">
+                    <i class="bi bi-cart-plus me-1"></i>Tambahkan ke Keranjang
+                </button>
             </div>
         </div>
     </div>
@@ -536,6 +579,51 @@ function addFromModal() {
     saveCartToStorage();
     renderCart();
     refreshGrid();
+}
+
+// ===== USULAN ITEM BARU (MEMO) =====
+async function submitMemoItem() {
+    const name  = document.getElementById('memoName').value.trim();
+    const uomEl = document.getElementById('memoUom');
+    const uomId = uomEl.value;
+    const qty   = parseFloat(document.getElementById('memoQty').value) || 0;
+    const errEl = document.getElementById('memoError');
+    errEl.style.display = 'none';
+
+    if (!name || !uomId || qty <= 0) {
+        errEl.textContent = 'Nama item, UOM, dan qty wajib diisi.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    try {
+        const res = await fetch('{{ route("procurement.items.quick-create") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            body: JSON.stringify({ name, uom_id: uomId }),
+        });
+        if (!res.ok) throw new Error('Gagal menyimpan usulan item.');
+        const item = await res.json();
+        item.category = 'Usulan Baru';
+        item.description = null;
+        item.photo = null;
+        item.order_count = 0;
+
+        allItems.push(item);
+        cartItems.push({ ...item, qty, notes: 'Usulan item baru dari user' });
+
+        bootstrap.Modal.getInstance(document.getElementById('memoModal')).hide();
+        document.getElementById('memoName').value = '';
+        document.getElementById('memoUom').value = '';
+        document.getElementById('memoQty').value = 1;
+
+        saveCartToStorage();
+        renderCart();
+        refreshGrid();
+    } catch (e) {
+        errEl.textContent = 'Terjadi kesalahan, coba lagi.';
+        errEl.style.display = 'block';
+    }
 }
 
 // ===== CART =====

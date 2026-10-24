@@ -8,8 +8,9 @@ class ProcurementItem extends Model
 {
     protected $fillable = [
         'item_code', 'name', 'uom_id', 'category_id', 'description', 'photo', 'price', 'is_active',
+        'is_user_suggested',
     ];
-    protected $casts = ['is_active' => 'boolean', 'price' => 'float'];
+    protected $casts = ['is_active' => 'boolean', 'price' => 'float', 'is_user_suggested' => 'boolean'];
 
     public function uom()      { return $this->belongsTo(Uom::class); }
     public function category() { return $this->belongsTo(ProcurementCategory::class, 'category_id'); }

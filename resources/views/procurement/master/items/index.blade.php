@@ -43,6 +43,9 @@
                                 </div>
                                 @endif
                                 {{ $item->name }}
+                                @if($item->is_user_suggested)
+                                <span class="badge bg-warning text-dark" style="font-size:10px;" title="Diusulkan user lewat form permintaan, harga & kategori belum dilengkapi">Usulan Baru</span>
+                                @endif
                             </div>
                         </td>
                         <td><span class="badge bg-info text-dark">{{ $item->uom?->code }}</span></td>

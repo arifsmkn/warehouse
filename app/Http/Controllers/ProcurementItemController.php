@@ -89,6 +89,12 @@ class ProcurementItemController extends Controller
             $data['photo'] = $this->storeSquarePhoto($request->file('photo'));
         }
 
+        // Begitu GA kasih harga & kategori asli, item usulan ini resmi "diadopsi"
+        // ke katalog -- badge "Usulan Baru" nggak relevan lagi.
+        if ($procurementItem->is_user_suggested && $request->filled('price') && $request->filled('category_id')) {
+            $data['is_user_suggested'] = false;
+        }
+
         $procurementItem->update($data);
         return redirect()->route('procurement.items.index')->with('success', 'Item ATK berhasil diperbarui.');
     }
@@ -147,6 +153,42 @@ class ProcurementItemController extends Controller
     public function downloadTemplate()
     {
         return Excel::download(new ProcurementItemTemplateExport(), 'template_item_atk.xlsx');
+    }
+
+    /**
+     * Dipanggil dari form "Buat Permintaan" (semua role, bukan cuma admin)
+     * saat item yang dicari user tidak ada di katalog -- bikin ProcurementItem
+     * baru seadanya (harga 0, prefix MEMO, ditandai is_user_suggested) biar
+     * baris itu bisa langsung masuk keranjang. GA/admin yang nanti melengkapi
+     * harga & kategori sebenarnya lewat Master Item (badge "Usulan Baru").
+     */
+    public function quickCreate(Request $request)
+    {
+        $request->validate([
+            'name'   => 'required|string|max:200',
+            'uom_id' => 'required|exists:uoms,id',
+        ]);
+
+        $item = ProcurementItem::create([
+            'item_code'          => ProcurementItem::generateItemCode('MEMO'),
+            'name'               => $request->name,
+            'uom_id'             => $request->uom_id,
+            'price'              => 0,
+            'is_active'          => true,
+            'is_user_suggested'  => true,
+        ]);
+
+        $item->load('uom');
+
+        return response()->json([
+            'id'        => $item->id,
+            'item_code' => $item->item_code,
+            'name'      => $item->name,
+            'uom_id'    => $item->uom_id,
+            'uom_code'  => $item->uom->code,
+            'price'     => 0,
+            'remaining_budget' => null,
+        ]);
     }
 
     public function search(Request $request)
