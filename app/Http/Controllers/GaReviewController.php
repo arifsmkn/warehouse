@@ -12,7 +12,6 @@ use App\Services\BudgetService;
 use App\Services\QadSoapService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 
 class GaReviewController extends Controller
 {
@@ -255,7 +254,7 @@ class GaReviewController extends Controller
         $directors = User::where('role', 'director')->where('is_active', true)->get();
 
         if ($directors->isNotEmpty()) {
-            Notification::send($directors, new DirectorBudgetSummaryNotification($purchaseRequests));
+            $this->safeNotify($directors, new DirectorBudgetSummaryNotification($purchaseRequests));
         }
     }
 

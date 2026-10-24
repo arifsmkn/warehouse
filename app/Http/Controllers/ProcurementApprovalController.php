@@ -9,7 +9,6 @@ use App\Notifications\GaReviewNeededNotification;
 use App\Notifications\SectionApprovalNeededNotification;
 use App\Services\BudgetService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 
 class ProcurementApprovalController extends Controller
 {
@@ -81,12 +80,12 @@ class ProcurementApprovalController extends Controller
         ]);
 
         $gaUsers = User::where('role', 'ga')->where('is_active', true)->get();
-        Notification::send($gaUsers, new GaReviewNeededNotification($procurementRequest));
+        $this->safeNotify($gaUsers, new GaReviewNeededNotification($procurementRequest));
 
         $procurementRequest->load('details.item', 'details.uom');
         $overBudget = $procurementRequest->details->where('is_over_budget', true);
         if ($overBudget->isNotEmpty()) {
-            Notification::send($gaUsers, new BudgetTopupNeededNotification($procurementRequest, $overBudget));
+            $this->safeNotify($gaUsers, new BudgetTopupNeededNotification($procurementRequest, $overBudget));
         }
 
         return redirect()->route('procurement.approvals.index')

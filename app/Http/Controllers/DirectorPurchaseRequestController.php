@@ -9,7 +9,6 @@ use App\Notifications\PrDeniedNotification;
 use App\Services\BudgetService;
 use App\Services\QadSoapService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 
 class DirectorPurchaseRequestController extends Controller
 {
@@ -127,7 +126,7 @@ class DirectorPurchaseRequestController extends Controller
         ]);
 
         $gaUsers = User::where('role', 'ga')->where('is_active', true)->get();
-        Notification::send($gaUsers, new PrDeniedNotification($purchaseRequest));
+        $this->safeNotify($gaUsers, new PrDeniedNotification($purchaseRequest));
 
         return redirect()->route('director.purchase-requests.index')
             ->with('success', "PR {$purchaseRequest->pr_no} ditolak dan dikirim ke QAD. GA sudah diberi tahu untuk revisi.");

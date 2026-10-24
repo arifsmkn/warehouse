@@ -13,7 +13,6 @@ use App\Services\BudgetService;
 use App\Services\FileCompressionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class ProcurementRequestController extends Controller
@@ -202,7 +201,7 @@ class ProcurementRequestController extends Controller
                 ->orWhereHas('approverDepartments', fn($q2) => $q2->where('departments.id', $pr->department_id)))
             ->get();
 
-        Notification::send($approvers, new SectionApprovalNeededNotification($pr));
+        $this->safeNotify($approvers, new SectionApprovalNeededNotification($pr));
     }
 
     public function destroyAttachment(ProcurementRequestAttachment $attachment)
