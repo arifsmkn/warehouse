@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Models\DepartmentQadConfig;
 use App\Models\PurchaseRequest;
 use App\Models\Transaction;
 use App\Services\BudgetService;
@@ -121,7 +122,8 @@ class GaReceivingController extends Controller
             ? $this->qadSoap->getReceivedQtyByLine($purchaseRequest->qad_req_no)
             : [];
 
-        $qadResult = $this->qadSoap->receivePurchaseOrder($request->qad_po_no, $qadLines);
+        $site = DepartmentQadConfig::where('department_id', $purchaseRequest->department_id)->value('site_code');
+        $qadResult = $this->qadSoap->receivePurchaseOrder($request->qad_po_no, $qadLines, $site);
         if (!$qadResult['success']) {
             return back()->withInput()->with('error', "Gagal catat penerimaan ke QAD: {$qadResult['message']}");
         }

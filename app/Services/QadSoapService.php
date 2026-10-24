@@ -268,7 +268,7 @@ XML;
      * operasi receivePurchaseOrder). $lines: [['line' => int, 'qty' => float], ...]
      * — nomor line PO diasumsikan sama urutannya dengan baris requisition asal.
      */
-    public function receivePurchaseOrder(string $poNumber, array $lines): array
+    public function receivePurchaseOrder(string $poNumber, array $lines, ?string $site = null): array
     {
         if (!$this->isConfigured()) {
             return ['success' => false, 'message' => 'QAD SOAP belum dikonfigurasi'];
@@ -280,7 +280,7 @@ XML;
             return ['success' => false, 'message' => 'Tidak ada baris item untuk diterima.'];
         }
 
-        $xml = $this->buildReceivePurchaseOrderXml($poNumber, $lines);
+        $xml = $this->buildReceivePurchaseOrderXml($poNumber, $lines, $site);
 
         try {
             $response = Http::withBody($xml, 'text/xml; charset=utf-8')
@@ -330,26 +330,28 @@ XML;
         }
     }
 
-    private function buildReceivePurchaseOrderXml(string $poNumber, array $lines): string
+    private function buildReceivePurchaseOrderXml(string $poNumber, array $lines, ?string $site = null): string
     {
-        $poEsc = $this->esc($poNumber);
-        $today = now()->format('Y-m-d');
+        $poEsc  = $this->esc($poNumber);
+        $today  = now()->format('Y-m-d');
+        $siteXml = $site ? '<site>' . $this->esc($site) . '</site>' : '';
 
+        // Struktur FLAT ini (line/lotserialQty/site langsung di dalam lineDetail,
+        // tanpa <operation> & tanpa nested <receiptDetail>) terbukti jalan di
+        // project QAD sejenis (matex) -- struktur lama kita (nested receiptDetail,
+        // ada <operation>A</operation>, tanpa site) selalu balas result=success
+        // tapi qty diterima TIDAK pernah benar-benar ter-posting di QAD (silent
+        // no-op). <yn>/<yn1> di akhir wajib ada juga di struktur yang terbukti ini.
         $lineXml = '';
         foreach ($lines as $line) {
             $lineNo = (int) $line['line'];
             $qtyEsc = $this->esc((string) $line['qty']);
-            $umXml  = !empty($line['um']) ? '<receiptUm>' . $this->esc($line['um']) . '</receiptUm>' : '';
             $lineXml .= <<<XML
 
                         <lineDetail>
-                            <ordernum>{$poEsc}</ordernum>
-                            <line>{$lineNo}</line>{$umXml}
-                            <receiptDetail>
-                                <ordernum>{$poEsc}</ordernum>
-                                <line>{$lineNo}</line>
-                                <lotserialQty>{$qtyEsc}</lotserialQty>
-                            </receiptDetail>
+                            <line>{$lineNo}</line>
+                            <lotserialQty>{$qtyEsc}</lotserialQty>{$siteXml}
+                            <multiEntry>false</multiEntry>
                         </lineDetail>
 XML;
         }
@@ -408,11 +410,12 @@ XML;
             </qcom:dsSessionContext>
             <dsPurchaseOrderReceive>
                 <purchaseOrderReceive>
-                    <operation>A</operation>
                     <ordernum>{$poEsc}</ordernum>
                     <effDate>{$today}</effDate>
                     <move>true</move>
                     <fillAll>false</fillAll>{$lineXml}
+                    <yn>true</yn>
+                    <yn1>true</yn1>
                 </purchaseOrderReceive>
             </dsPurchaseOrderReceive>
         </receivePurchaseOrder>
