@@ -22,6 +22,7 @@ use App\Http\Controllers\ProcurementApprovalController;
 use App\Http\Controllers\ProcurementCategoryController;
 use App\Http\Controllers\QadSettingController;
 use App\Http\Controllers\ProcurementItemController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProcurementRequestController;
 use App\Http\Controllers\ProcurementPurposeController;
 use App\Http\Controllers\PurchaseRequestController;
@@ -40,6 +41,11 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Profil akun sendiri (semua role)
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
