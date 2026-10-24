@@ -179,37 +179,43 @@ class GaReceivingController extends Controller
                 'trans_date'     => today(),
             ]);
 
-            foreach ($request->items as $line) {
-                $qtyReceived = (float) $line['qty_received'];
-                if ($qtyReceived <= 0) continue;
+            // Dikredit berdasarkan SELISIH kumulatif QAD vs yang sudah pernah
+            // dikonfirmasi lokal (qty_received_confirmed) untuk SEMUA baris --
+            // bukan cuma qty yang diketik GA di form kali ini. Ini sengaja,
+            // bukan dipakai mentah-mentah dari $request->items: kalau baris
+            // lain ternyata sudah kecukupan duluan di QAD (mis. diterima
+            // native/lewat tes) sebelum form ini dibuka, formnya otomatis
+            // menampilkan sisa 0 untuk baris itu -- padahal qty itu belum
+            // pernah dikreditkan ke stok lokal. Pakai delta disini memastikan
+            // baris seperti itu tetap ikut dikreditkan saat PR ini disubmit,
+            // bukan diam-diam terlewat begitu status PR jadi "distributing".
+            foreach ($purchaseRequest->details as $i => $detail) {
+                $lineNo = $i + 1;
+                $cumulative = $afterByLine[$lineNo] ?? null;
+                if ($cumulative === null) continue;
 
-                $detail = $purchaseRequest->details->firstWhere('id', $line['detail_id']);
-                if (!$detail) continue;
+                $cumulative = min($cumulative, $detail->qty_needed);
+                $qtyToCredit = $cumulative - $detail->qty_received_confirmed;
+                if ($qtyToCredit <= 0.0001) continue;
 
                 $item = $this->stockService->resolveOrCreateWarehouseItem($detail->procurementItem);
-
-                // Simpan cumulative QAD yang sudah dikonfirmasi di baris ini --
-                // dipakai fitur "Sinkronkan dari QAD" biar tidak mengkredit ulang
-                // qty yang sudah dikreditkan lewat jalur submit biasa ini.
-                $lineNo = $purchaseRequest->details->search(fn($d) => $d->id === $detail->id) + 1;
-                if (isset($afterByLine[$lineNo])) {
-                    $detail->update(['qty_received_confirmed' => $afterByLine[$lineNo]]);
-                }
 
                 $trx->details()->create([
                     'item_id'       => $item->id,
                     'qty_requested' => $detail->qty_needed,
-                    'qty_approved'  => $qtyReceived,
+                    'qty_approved'  => $qtyToCredit,
                 ]);
 
                 // Alokasikan ke masing-masing dept secara proporsional terhadap qty yang diminta
-                $ratio = $detail->qty_needed > 0 ? $qtyReceived / $detail->qty_needed : 0;
+                $ratio = $detail->qty_needed > 0 ? $qtyToCredit / $detail->qty_needed : 0;
                 foreach ($detail->sources as $source) {
                     $deptQty = round($source->qty * $ratio, 2);
                     if ($deptQty <= 0) continue;
 
                     $this->stockService->creditDepartmentStock($item, $source->department_id, $deptQty);
                 }
+
+                $detail->update(['qty_received_confirmed' => $cumulative]);
             }
 
             $purchaseRequest->update([
@@ -240,7 +246,12 @@ class GaReceivingController extends Controller
      */
     public function syncFromQad(PurchaseRequest $purchaseRequest)
     {
-        if ($purchaseRequest->source !== 'ga_aggregation' || !in_array($purchaseRequest->status, ['director_confirmed', 'partially_received'])) {
+        // "distributing" sengaja ikut diizinkan -- jaring pengaman kalau ada
+        // baris yang kumulatif QAD-nya sudah cukup duluan sebelum form
+        // submit biasa (store()) sempat jalan, sehingga status PR sudah
+        // "distributing" tapi salah satu baris ternyata belum sempat
+        // dikreditkan ke stok lokal.
+        if ($purchaseRequest->source !== 'ga_aggregation' || !in_array($purchaseRequest->status, ['director_confirmed', 'partially_received', 'distributing'])) {
             return back()->with('error', 'PR ini belum siap untuk disinkronkan.');
         }
         if (!$purchaseRequest->qad_req_no) {
