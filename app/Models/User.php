@@ -84,7 +84,7 @@ class User extends Authenticatable
         return match($this->role) {
             'superadmin' => 'Super Admin',
             'admin'      => 'Admin Warehouse',
-            'section'    => 'Section / Kasi',
+            'section'    => 'Section',
             'manager'    => 'Manager',
             'director'   => 'Direktur',
             'purchasing' => 'Purchasing',
