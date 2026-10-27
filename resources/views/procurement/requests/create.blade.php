@@ -357,6 +357,24 @@ let currentItem = null;
 let activeCategory = 'all';
 let categoryTree = [];
 
+// ===== DIAGNOSTIK: kirim error JS ke server =====
+// Supaya laporan "tidak bisa diklik" dari user bisa dicek langsung dari log
+// server, tanpa perlu user kirim screenshot console browser.
+let lastReportedError = null;
+function reportClientError(message, stack) {
+    if (message === lastReportedError) return; // jangan spam error yang sama berulang
+    lastReportedError = message;
+    try {
+        fetch('{{ route("procurement.items.client-error") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            body: JSON.stringify({ message: String(message || '').slice(0, 2000), stack: String(stack || '').slice(0, 2000), url: window.location.href }),
+        }).catch(() => {});
+    } catch (e) {}
+}
+window.addEventListener('error', (e) => reportClientError(e.message, e.error && e.error.stack));
+window.addEventListener('unhandledrejection', (e) => reportClientError('unhandledrejection: ' + (e.reason && e.reason.message || e.reason), e.reason && e.reason.stack));
+
 // ===== KERANJANG: PERSISTENCE (localStorage) =====
 // Supaya keranjang tidak hilang kalau browser di-refresh sebelum submit.
 // Di-scope per user (bukan per department) karena department otomatis ikut user,
@@ -604,22 +622,26 @@ function modalAdjustQty(delta) {
 }
 
 function addFromModal() {
-    if (!currentItem) return;
-    const qty   = parseFloat(document.getElementById('modalQty').value) || 1;
-    const notes = document.getElementById('modalNotes').value;
+    try {
+        if (!currentItem) return;
+        const qty   = parseFloat(document.getElementById('modalQty').value) || 1;
+        const notes = document.getElementById('modalNotes').value;
 
-    const idx = cartItems.findIndex(c => c.id === currentItem.id);
-    if (idx >= 0) {
-        cartItems[idx].qty   = qty;
-        cartItems[idx].notes = notes;
-    } else {
-        cartItems.push({ ...currentItem, qty, notes });
+        const idx = cartItems.findIndex(c => c.id === currentItem.id);
+        if (idx >= 0) {
+            cartItems[idx].qty   = qty;
+            cartItems[idx].notes = notes;
+        } else {
+            cartItems.push({ ...currentItem, qty, notes });
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+        saveCartToStorage();
+        renderCart();
+        refreshGrid();
+    } catch (e) {
+        reportClientError('addFromModal: ' + e.message, e.stack);
     }
-
-    bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
-    saveCartToStorage();
-    renderCart();
-    refreshGrid();
 }
 
 // ===== USULAN ITEM BARU (MEMO) =====
@@ -676,6 +698,7 @@ async function submitMemoItem() {
         renderCart();
         refreshGrid();
     } catch (e) {
+        reportClientError('submitMemoItem: ' + e.message, e.stack);
         errEl.textContent = e.message || 'Terjadi kesalahan, coba lagi.';
         errEl.style.display = 'block';
     }

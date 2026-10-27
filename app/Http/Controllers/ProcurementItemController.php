@@ -198,6 +198,27 @@ class ProcurementItemController extends Controller
         ]);
     }
 
+    /**
+     * Dipanggil otomatis dari JS halaman "Buat Permintaan" tiap kali ada error
+     * JS tak tertangani atau tombol tambah-keranjang gagal -- supaya laporan
+     * "tidak bisa diklik" dari user bisa didiagnosis dari log server, tanpa
+     * perlu user kirim screenshot console browser mereka.
+     */
+    public function reportClientError(Request $request)
+    {
+        $request->validate(['message' => 'required|string|max:2000']);
+
+        \Illuminate\Support\Facades\Log::warning('[client-js-error] ' . $request->message, [
+            'user_id'    => auth()->id(),
+            'npk'        => auth()->user()->npk ?? null,
+            'url'        => $request->input('url'),
+            'stack'      => $request->input('stack'),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return response()->json(['logged' => true]);
+    }
+
     public function search(Request $request)
     {
         $query = ProcurementItem::with(['uom', 'category'])->where('is_active', true);

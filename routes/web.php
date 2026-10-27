@@ -256,6 +256,7 @@ Route::middleware('auth')->group(function () {
         Route::get('items/search', [ProcurementItemController::class, 'search'])->name('items.search');
         Route::get('items/categories', [ProcurementItemController::class, 'categories'])->name('items.categories');
         Route::post('items/quick-create', [ProcurementItemController::class, 'quickCreate'])->name('items.quick-create');
+        Route::post('items/client-error', [ProcurementItemController::class, 'reportClientError'])->name('items.client-error');
 
         // Permintaan pengadaan (semua role)
         Route::get('requests', [ProcurementRequestController::class, 'index'])->name('requests.index');
