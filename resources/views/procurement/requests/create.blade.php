@@ -281,6 +281,10 @@
                     <label class="form-label fw-semibold" style="font-size:12px;">Nama Item <span class="text-danger">*</span></label>
                     <input type="text" id="memoName" class="form-control" placeholder="Contoh: Map Plastik Warna Merah">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:12px;">Foto (opsional)</label>
+                    <input type="file" id="memoPhoto" class="form-control" accept="image/*">
+                </div>
                 <div class="row g-3 mb-2">
                     <div class="col-6">
                         <label class="form-label fw-semibold" style="font-size:12px;">UOM <span class="text-danger">*</span></label>
@@ -597,16 +601,29 @@ async function submitMemoItem() {
     }
 
     try {
+        const photoFile = document.getElementById('memoPhoto').files[0];
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('uom_id', uomId);
+        if (photoFile) formData.append('photo', photoFile);
+
         const res = await fetch('{{ route("procurement.items.quick-create") }}', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            body: JSON.stringify({ name, uom_id: uomId }),
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            body: formData,
         });
-        if (!res.ok) throw new Error('Gagal menyimpan usulan item.');
+        if (!res.ok) {
+            if (res.status === 422) {
+                const errJson = await res.json();
+                const firstErrorArr = Object.values(errJson.errors || {})[0];
+                const firstError = firstErrorArr ? firstErrorArr[0] : null;
+                throw new Error(firstError || 'Data usulan item tidak valid.');
+            }
+            throw new Error('Gagal menyimpan usulan item.');
+        }
         const item = await res.json();
         item.category = 'Usulan Baru';
         item.description = null;
-        item.photo = null;
         item.order_count = 0;
 
         allItems.push(item);
@@ -616,12 +633,13 @@ async function submitMemoItem() {
         document.getElementById('memoName').value = '';
         document.getElementById('memoUom').value = '';
         document.getElementById('memoQty').value = 1;
+        document.getElementById('memoPhoto').value = '';
 
         saveCartToStorage();
         renderCart();
         refreshGrid();
     } catch (e) {
-        errEl.textContent = 'Terjadi kesalahan, coba lagi.';
+        errEl.textContent = e.message || 'Terjadi kesalahan, coba lagi.';
         errEl.style.display = 'block';
     }
 }

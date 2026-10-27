@@ -45,7 +45,7 @@ class ProcurementItemController extends Controller
             'category_id' => 'nullable|exists:procurement_categories,id',
             'prefix'      => 'required|string|exists:item_code_prefixes,code',
             'price'       => 'nullable|numeric|min:0',
-            'photo'       => 'nullable|image|max:2048',
+            'photo'       => 'nullable|image|max:8192',
         ]);
 
         // Kode item digenerate ulang di sini (bukan percaya input form) supaya
@@ -77,7 +77,7 @@ class ProcurementItemController extends Controller
             'uom_id'      => 'required|exists:uoms,id',
             'category_id' => 'nullable|exists:procurement_categories,id',
             'price'       => 'nullable|numeric|min:0',
-            'photo'       => 'nullable|image|max:2048',
+            'photo'       => 'nullable|image|max:8192',
         ]);
 
         $data = $request->only('name', 'uom_id', 'category_id', 'description', 'price') + [
@@ -167,17 +167,23 @@ class ProcurementItemController extends Controller
         $request->validate([
             'name'   => 'required|string|max:200',
             'uom_id' => 'required|exists:uoms,id',
+            'photo'  => 'nullable|image|max:8192',
         ]);
 
-        $item = ProcurementItem::create([
+        $data = [
             'item_code'          => ProcurementItem::generateItemCode('MEMO'),
             'name'               => $request->name,
             'uom_id'             => $request->uom_id,
             'price'              => 0,
             'is_active'          => true,
             'is_user_suggested'  => true,
-        ]);
+        ];
 
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $this->storeSquarePhoto($request->file('photo'));
+        }
+
+        $item = ProcurementItem::create($data);
         $item->load('uom');
 
         return response()->json([
@@ -187,6 +193,7 @@ class ProcurementItemController extends Controller
             'uom_id'    => $item->uom_id,
             'uom_code'  => $item->uom->code,
             'price'     => 0,
+            'photo'     => $item->photo ? asset('storage/' . $item->photo) : null,
             'remaining_budget' => null,
         ]);
     }

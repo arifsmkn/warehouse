@@ -133,9 +133,12 @@ function showScanner() {
 
 document.addEventListener('DOMContentLoaded', () => { initScanner(); });
 
-document.getElementById('manualQrInput')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') processQrCode(e.target.value);
-});
+var manualQrInputEl = document.getElementById('manualQrInput');
+if (manualQrInputEl) {
+    manualQrInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') processQrCode(e.target.value);
+    });
+}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endpush
