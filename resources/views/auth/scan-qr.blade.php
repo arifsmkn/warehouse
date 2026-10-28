@@ -25,6 +25,8 @@
         Arahkan kamera ke QR Code pada ID Card Anda
     </p>
 
+    <div id="scannerError" class="alert alert-warning py-2 mb-3" style="font-size:12px;display:none;"></div>
+
     <div id="scanArea">
         <div id="reader" style="width:100%;"></div>
         <div class="text-center mt-2">
@@ -82,6 +84,12 @@ function initScanner() {
         },
         (err) => {}
     ).catch(err => {
+        const message = String(err && err.message || err || '');
+        const isInsecureContext = !window.isSecureContext || /secure context/i.test(message);
+        document.getElementById('scannerError').textContent = isInsecureContext
+            ? 'Kamera tidak bisa diakses karena koneksi belum HTTPS (kamera browser hanya boleh dipakai di koneksi aman). Silakan pakai Input Manual untuk sementara.'
+            : 'Kamera tidak bisa diakses: ' + message;
+        document.getElementById('scannerError').style.display = 'block';
         showManualInput();
     });
 }
