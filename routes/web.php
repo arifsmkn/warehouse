@@ -15,6 +15,7 @@ use App\Http\Controllers\GoodsOutController;
 use App\Http\Controllers\GoodsReturnController;
 use App\Http\Controllers\ItemCodePrefixController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemSuggestionController;
 use App\Http\Controllers\MemoTransactionController;
 use App\Http\Controllers\MyTransactionController;
 use App\Http\Controllers\MinimumStockController;
@@ -204,6 +205,12 @@ Route::middleware('auth')->group(function () {
             Route::get('/{employee}', [GaCheckoutController::class, 'show'])->name('show');
             Route::post('/{employee}', [GaCheckoutController::class, 'store'])->name('store');
         });
+
+        Route::prefix('item-suggestions')->name('item-suggestions.')->group(function () {
+            Route::get('/', [ItemSuggestionController::class, 'reviewIndex'])->name('index');
+            Route::post('/{itemSuggestion}/approve', [ItemSuggestionController::class, 'approve'])->name('approve');
+            Route::post('/{itemSuggestion}/reject', [ItemSuggestionController::class, 'reject'])->name('reject');
+        });
     });
 
     // ===== DIRECTOR: approval PR hasil agregasi GA =====
@@ -255,8 +262,12 @@ Route::middleware('auth')->group(function () {
         // Search & browse item (semua role)
         Route::get('items/search', [ProcurementItemController::class, 'search'])->name('items.search');
         Route::get('items/categories', [ProcurementItemController::class, 'categories'])->name('items.categories');
-        Route::post('items/quick-create', [ProcurementItemController::class, 'quickCreate'])->name('items.quick-create');
         Route::post('items/client-error', [ProcurementItemController::class, 'reportClientError'])->name('items.client-error');
+
+        // Usulan item baru (semua role requester)
+        Route::get('item-suggestions', [ItemSuggestionController::class, 'index'])->name('item-suggestions.index');
+        Route::get('item-suggestions/create', [ItemSuggestionController::class, 'create'])->name('item-suggestions.create');
+        Route::post('item-suggestions', [ItemSuggestionController::class, 'store'])->name('item-suggestions.store');
 
         // Permintaan pengadaan (semua role)
         Route::get('requests', [ProcurementRequestController::class, 'index'])->name('requests.index');

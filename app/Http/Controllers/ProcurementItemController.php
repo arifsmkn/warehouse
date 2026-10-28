@@ -156,49 +156,6 @@ class ProcurementItemController extends Controller
     }
 
     /**
-     * Dipanggil dari form "Buat Permintaan" (semua role, bukan cuma admin)
-     * saat item yang dicari user tidak ada di katalog -- bikin ProcurementItem
-     * baru seadanya (harga 0, prefix MEMO, ditandai is_user_suggested) biar
-     * baris itu bisa langsung masuk keranjang. GA/admin yang nanti melengkapi
-     * harga & kategori sebenarnya lewat Master Item (badge "Usulan Baru").
-     */
-    public function quickCreate(Request $request)
-    {
-        $request->validate([
-            'name'   => 'required|string|max:200',
-            'uom_id' => 'required|exists:uoms,id',
-            'photo'  => 'nullable|image|max:8192',
-        ]);
-
-        $data = [
-            'item_code'          => ProcurementItem::generateItemCode('MEMO'),
-            'name'               => $request->name,
-            'uom_id'             => $request->uom_id,
-            'price'              => 0,
-            'is_active'          => true,
-            'is_user_suggested'  => true,
-        ];
-
-        if ($request->hasFile('photo')) {
-            $data['photo'] = $this->storeSquarePhoto($request->file('photo'));
-        }
-
-        $item = ProcurementItem::create($data);
-        $item->load('uom');
-
-        return response()->json([
-            'id'        => $item->id,
-            'item_code' => $item->item_code,
-            'name'      => $item->name,
-            'uom_id'    => $item->uom_id,
-            'uom_code'  => $item->uom->code,
-            'price'     => 0,
-            'photo'     => $item->photo ? asset('storage/' . $item->photo) : null,
-            'remaining_budget' => null,
-        ]);
-    }
-
-    /**
      * Dipanggil otomatis dari JS halaman "Buat Permintaan" tiap kali ada error
      * JS tak tertangani atau tombol tambah-keranjang gagal -- supaya laporan
      * "tidak bisa diklik" dari user bisa didiagnosis dari log server, tanpa

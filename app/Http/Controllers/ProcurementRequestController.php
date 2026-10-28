@@ -6,7 +6,6 @@ use App\Models\ItemDepartmentBudget;
 use App\Models\ProcurementItem;
 use App\Models\ProcurementRequest;
 use App\Models\ProcurementRequestAttachment;
-use App\Models\Uom;
 use App\Models\User;
 use App\Notifications\SectionApprovalNeededNotification;
 use App\Services\BudgetService;
@@ -76,9 +75,8 @@ class ProcurementRequestController extends Controller
 
     public function create()
     {
-        $uoms = Uom::where('is_active', true)->orderBy('code')->get();
         $defaultPurpose = 'Kebutuhan ATK bulan ' . $this->indonesianMonthName(now()->addMonthNoOverflow());
-        return view('procurement.requests.create', compact('uoms', 'defaultPurpose'));
+        return view('procurement.requests.create', compact('defaultPurpose'));
     }
 
     /** Nama bulan Indonesia — dipakai buat default "Kebutuhan ATK" bulan depan, lepas dari APP_LOCALE. */

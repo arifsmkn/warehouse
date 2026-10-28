@@ -536,11 +536,13 @@
             $pengadaanAtkActive = request()->routeIs('procurement.requests.*')
                 || request()->routeIs('admin.purchase-requests.*')
                 || request()->routeIs('procurement.approvals.*')
+                || request()->routeIs('procurement.item-suggestions.*')
                 || request()->routeIs('ga.review.*')
                 || request()->routeIs('ga.requests.*')
                 || request()->routeIs('ga.receiving.*')
                 || request()->routeIs('ga.checkout.*')
                 || request()->routeIs('ga.budget.*')
+                || request()->routeIs('ga.item-suggestions.*')
                 || request()->routeIs('director.purchase-requests.*');
         @endphp
         <li class="sidebar-item">
@@ -555,6 +557,12 @@
                     <a href="{{ route('procurement.requests.index') }}" class="sidebar-link {{ request()->routeIs('procurement.requests.*') ? 'active' : '' }}">
                         <i class="pc-micon bi bi-cart3"></i>
                         <span class="pc-mtext">Permintaan Saya</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('procurement.item-suggestions.index') }}" class="sidebar-link {{ request()->routeIs('procurement.item-suggestions.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-plus-circle"></i>
+                        <span class="pc-mtext">Usulan Item Baru</span>
                     </a>
                 </li>
 
@@ -624,6 +632,16 @@
                     <a href="{{ route('ga.budget.index') }}" class="sidebar-link {{ request()->routeIs('ga.budget.*') ? 'active' : '' }}">
                         <i class="pc-micon bi bi-cash-coin"></i>
                         <span class="pc-mtext">Budget</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('ga.item-suggestions.index') }}" class="sidebar-link {{ request()->routeIs('ga.item-suggestions.*') ? 'active' : '' }}">
+                        <i class="pc-micon bi bi-plus-circle"></i>
+                        <span class="pc-mtext">Review Usulan Item</span>
+                        @php $pendingSuggestions = \App\Models\ItemSuggestion::where('status','pending')->count(); @endphp
+                        @if($pendingSuggestions > 0)
+                            <span class="badge bg-danger badge-pill ms-auto">{{ $pendingSuggestions }}</span>
+                        @endif
                     </a>
                 </li>
                 @endif
