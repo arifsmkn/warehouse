@@ -13,7 +13,7 @@
 
 @section('content')
 <div class="auth-card">
-    <a href="{{ route('login') }}" class="btn btn-sm btn-light mb-3">
+    <a href="{{ route('login', [], false) }}" class="btn btn-sm btn-light mb-3">
         <i class="bi bi-arrow-left me-1"></i>Kembali
     </a>
 
@@ -97,7 +97,7 @@ function initScanner() {
 function processQrCode(code) {
     if (!code.trim()) return;
 
-    fetch('{{ route("auth.scan-qr.post") }}', {
+    fetch('{{ route("auth.scan-qr.post", [], false) }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -59,7 +59,8 @@
 
     <div class="divider"><span>atau</span></div>
 
-    <a href="{{ route('auth.scan-qr') }}" class="btn btn-outline-secondary w-100">
+    {{-- Dipaksa HTTPS: kamera browser hanya diizinkan di koneksi aman (https/localhost). --}}
+    <a href="{{ \Illuminate\Support\Str::replaceFirst('http://', 'https://', route('auth.scan-qr')) }}" class="btn btn-outline-secondary w-100">
         <i class="bi bi-qr-code-scan me-2"></i>Masuk dengan QR Code
     </a>
 
