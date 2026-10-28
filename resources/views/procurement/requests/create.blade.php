@@ -8,12 +8,6 @@
 
 @push('styles')
 <style>
-/* ===== PAGE ACCENT (scoped to this page only) ===== */
-.shop-page {
-    --accent:#7AC7EA; --accent-dark:#4CAED9; --accent-darker:#2E93C0;
-    --accent-light:#EAF6FC; --accent-text:#0B4A63;
-}
-
 /* ===== LAYOUT ===== */
 .shop-layout { display:grid; grid-template-columns:230px 1fr 360px; gap:16px; align-items:start; }
 @media(max-width:1200px){ .shop-layout { grid-template-columns:200px 1fr 360px; } }
@@ -27,53 +21,47 @@
     border-radius:8px; cursor:pointer; font-size:13px; font-weight:500;
     background:#f4f5f8; color:#495057; transition:background .15s;
 }
-.cat-tree-row:hover { background:var(--accent-light); color:var(--accent-text); }
-.cat-tree-row.active { background:var(--accent); color:var(--accent-text); font-weight:700; }
+.cat-tree-row:hover { background:#e9ecef; }
+.cat-tree-row.active { background:#4680ff; color:#fff; }
 .cat-tree-row .chevron { font-size:11px; width:14px; flex-shrink:0; display:inline-block; transition:transform .15s; color:#6c757d; }
-.cat-tree-row.active .chevron { color:var(--accent-text); }
+.cat-tree-row.active .chevron { color:#fff; }
 .cat-tree-row .chevron.rotated { transform:rotate(90deg); }
 .cat-tree-row .chevron.invisible-chevron { visibility:hidden; }
 .cat-tree-children { margin-left:14px; padding-left:8px; border-left:1px dashed #dee2e6; margin-top:2px; display:none; }
 .cat-tree-children.show { display:block; }
 .cat-tree-children .cat-tree-row { background:transparent; font-weight:400; padding:6px 10px; }
-.cat-tree-children .cat-tree-row:hover { background:var(--accent-light); }
-.cat-tree-children .cat-tree-row.active { background:var(--accent); color:var(--accent-text); font-weight:700; }
+.cat-tree-children .cat-tree-row:hover { background:#e9ecef; }
+.cat-tree-children .cat-tree-row.active { background:#4680ff; color:#fff; }
 
-/* ===== ITEM CARDS (Tokopedia-style product cards) ===== */
+/* ===== ITEM CARDS ===== */
 .item-card {
-    border:1px solid #eef0f3; border-radius:10px;
-    cursor:pointer; transition:all .18s;
+    border:2px solid transparent; border-radius:12px;
+    cursor:pointer; transition:all .2s;
     background:white; position:relative; overflow:hidden;
 }
-.item-card:hover { border-color:var(--accent); box-shadow:0 6px 18px rgba(122,199,234,.35); transform:translateY(-3px); }
-.item-card.in-cart { border-color:#198754; background:#f6fffa; }
-.item-card .card-img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px 10px 0 0; background:#fafafa; }
+.item-card:hover { border-color:#4680ff; box-shadow:0 4px 16px rgba(70,128,255,.15); transform:translateY(-2px); }
+.item-card.in-cart { border-color:#198754; background:#f0fff4; }
+.item-card .card-img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px 8px 0 0; }
 .item-card .no-photo {
     width:100%; aspect-ratio:1; background:linear-gradient(135deg,#f0f2f5,#e9ecef);
     display:flex; align-items:center; justify-content:center;
-    border-radius:10px 10px 0 0; color:#adb5bd; font-size:32px;
+    border-radius:8px 8px 0 0; color:#adb5bd; font-size:32px;
 }
-.item-card .card-body-inner { padding:10px 10px 12px; }
-.item-card .item-price { font-size:14px; font-weight:700; color:#1a1a1a; margin-bottom:3px; }
-.item-card .item-name {
-    font-size:12px; font-weight:400; line-height:1.35; color:#6c757d; margin-bottom:6px;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-    min-height:2.6em;
-}
-.item-card .item-code { font-size:10px; color:#adb5bd; }
+.item-card .card-body-inner { padding:10px 12px 12px; }
+.item-card .item-name { font-size:13px; font-weight:600; line-height:1.3; margin-bottom:4px; }
+.item-card .item-code { font-size:10px; color:#6c757d; }
 .item-card .item-cat  { font-size:10px; }
 .item-card .in-cart-badge {
     position:absolute; top:8px; right:8px;
     background:#198754; color:white; border-radius:50%;
     width:24px; height:24px; display:none;
-    align-items:center; justify-content:center; font-size:12px; z-index:1;
+    align-items:center; justify-content:center; font-size:12px;
 }
 .item-card.in-cart .in-cart-badge { display:flex; }
 .item-card .frequent-badge {
     position:absolute; top:8px; left:8px; z-index:1;
-    background:var(--accent); color:var(--accent-text); border:none;
-    border-radius:4px; padding:3px 8px; font-size:9px; font-weight:700;
-    box-shadow:0 1px 4px rgba(0,0,0,.15);
+    background:#fff8e1; color:#b8860b; border:1px solid #f0c94a;
+    border-radius:20px; padding:2px 8px; font-size:9px; font-weight:600;
 }
 
 /* ===== CATEGORY PILLS ===== */
@@ -82,15 +70,15 @@
     border:1.5px solid #dee2e6; background:white; cursor:pointer;
     white-space:nowrap; transition:all .15s;
 }
-.cat-pill:hover { border-color:var(--accent); color:var(--accent-darker); }
-.cat-pill.active { background:var(--accent); border-color:var(--accent); color:var(--accent-text); font-weight:700; }
+.cat-pill:hover { border-color:#4680ff; color:#4680ff; }
+.cat-pill.active { background:#4680ff; border-color:#4680ff; color:white; }
 
 /* ===== CART ===== */
 .cart-item-row { border-bottom:1px solid #f0f2f5; padding:8px 0; }
 .cart-item-row:last-child { border-bottom:none; }
 .qty-ctrl { display:flex; align-items:center; gap:4px; }
 .qty-ctrl button { width:26px; height:26px; border:1px solid #dee2e6; background:white; border-radius:6px; font-size:13px; cursor:pointer; }
-.qty-ctrl button:hover { background:var(--accent-light); border-color:var(--accent); color:var(--accent-darker); }
+.qty-ctrl button:hover { background:#f0f2f5; }
 .qty-ctrl input { width:50px; height:26px; text-align:center; border:1px solid #dee2e6; border-radius:6px; font-size:12px; }
 
 /* ===== ITEM MODAL ===== */
@@ -98,31 +86,8 @@
 
 /* ===== SEARCH ===== */
 .search-wrapper { position:relative; }
-.search-wrapper .bi-search { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#adb5bd; font-size:15px; }
-.search-wrapper input {
-    padding-left:40px; border-radius:24px; border:1.5px solid #e9ecef;
-    height:44px; font-size:13px; transition:border-color .15s, box-shadow .15s;
-}
-.search-wrapper input:focus {
-    border-color:var(--accent); box-shadow:0 0 0 3px rgba(122,199,234,.25);
-}
-
-/* ===== PRIMARY ACCENT OVERRIDES (scoped to this page) ===== */
-.shop-page .btn-primary {
-    background-color:var(--accent); border-color:var(--accent); color:var(--accent-text); font-weight:600;
-}
-.shop-page .btn-primary:hover, .shop-page .btn-primary:focus {
-    background-color:var(--accent-dark); border-color:var(--accent-dark); color:#fff;
-}
-.shop-page .btn-outline-primary {
-    border-color:var(--accent); color:var(--accent-darker);
-}
-.shop-page .btn-outline-primary:hover {
-    background-color:var(--accent); border-color:var(--accent); color:var(--accent-text);
-}
-.shop-page .bg-primary { background-color:var(--accent) !important; color:var(--accent-text) !important; }
-.shop-page .text-primary { color:var(--accent-darker) !important; }
-.shop-page .badge.bg-info { background-color:var(--accent-light) !important; color:var(--accent-text) !important; }
+.search-wrapper .bi-search { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#6c757d; }
+.search-wrapper input { padding-left:36px; border-radius:10px; }
 
 /* ===== LOADING ===== */
 .skeleton-card { background:#f0f2f5; border-radius:12px; animation:shimmer 1.2s infinite; aspect-ratio:1; }
@@ -131,7 +96,6 @@
 @endpush
 
 @section('content')
-<div class="shop-page">
 <form id="procurementForm" method="POST" action="{{ route('procurement.requests.store') }}" enctype="multipart/form-data">
 @csrf
 
@@ -162,7 +126,7 @@
                     <input type="text" id="searchInput" class="form-control"
                            placeholder="Cari nama atau kode item ATK...">
                 </div>
-                <a href="{{ route('procurement.item-suggestions.create') }}" class="btn btn-outline-primary btn-sm w-100 mb-3" style="border-radius:20px;">
+                <a href="{{ route('procurement.item-suggestions.create') }}" class="btn btn-outline-primary btn-sm w-100 mb-3">
                     <i class="bi bi-plus-circle me-1"></i>Item Tidak Ditemukan? Usulkan Item Baru
                 </a>
             </div>
@@ -301,8 +265,6 @@
             </div>
         </div>
     </div>
-</div>
-
 </div>
 @endsection
 
@@ -516,16 +478,16 @@ function renderGrid(items) {
                     : `<div class="no-photo"><i class="bi bi-box-seam"></i></div>`
                 }
                 <div class="card-body-inner">
-                    <div class="item-price">
+                    <div class="item-name text-truncate" title="${item.name}">${item.name}</div>
+                    <div class="item-code mb-1">${item.item_code}</div>
+                    <div class="d-flex justify-content-end align-items-center mb-1">
+                        <span class="badge bg-info text-dark" style="font-size:10px;">${item.uom_code}</span>
+                    </div>
+                    <div class="fw-bold text-success" style="font-size:12px;">
                         ${item.price > 0
                             ? 'Rp ' + item.price.toLocaleString('id-ID')
-                            : '<span class="text-muted fw-normal" style="font-size:11px;">Harga dari QAD</span>'
+                            : '<span class="text-muted fw-normal" style="font-size:10px;">Harga dari QAD</span>'
                         }
-                    </div>
-                    <div class="item-name" title="${item.name}">${item.name}</div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="item-code">${item.item_code}</span>
-                        <span class="badge bg-info text-dark" style="font-size:10px;">${item.uom_code}</span>
                     </div>
                     ${budgetBadge(item)}
                 </div>
