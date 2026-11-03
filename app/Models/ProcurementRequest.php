@@ -234,7 +234,9 @@ class ProcurementRequest extends Model
         // Tandai satu step "active" (sedang berjalan) — step pertama yang
         // belum done & belum rejected, selama belum ada step lebih awal yang
         // reject (kalau sudah reject, alurnya berhenti, tidak ada yang aktif).
-        $blocked = false;
+        // Masih "draft" = belum diajukan ke siapa pun, jadi tidak ada step
+        // sesudah "created" yang boleh tampil seolah sedang menunggu approval.
+        $blocked = $this->status === 'draft';
         foreach ($steps as &$step) {
             $step['active'] = false;
             if ($blocked) continue;

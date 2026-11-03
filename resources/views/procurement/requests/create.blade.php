@@ -245,7 +245,7 @@
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <div class="qty-ctrl">
                             <button type="button" onclick="modalAdjustQty(-1)">−</button>
-                            <input type="number" id="modalQty" value="1" min="1" step="0.01" oninput="checkModalBudget()">
+                            <input type="number" id="modalQty" value="1" min="1" step="1" oninput="checkModalBudget()">
                             <button type="button" onclick="modalAdjustQty(1)">+</button>
                         </div>
                         <span class="badge bg-info text-dark fw-semibold" id="modalUom"></span>
@@ -529,21 +529,21 @@ function checkModalBudget() {
         warning.style.display = 'none';
         return;
     }
-    const qty = parseFloat(document.getElementById('modalQty').value) || 0;
+    const qty = parseInt(document.getElementById('modalQty').value) || 0;
     const cost = qty * (currentItem.price || 0);
     warning.style.display = cost > currentItem.remaining_budget ? 'block' : 'none';
 }
 
 function modalAdjustQty(delta) {
     const input = document.getElementById('modalQty');
-    input.value = Math.max(0.01, parseFloat(input.value || 1) + delta);
+    input.value = Math.max(1, (parseInt(input.value) || 1) + delta);
     checkModalBudget();
 }
 
 function addFromModal() {
     try {
         if (!currentItem) return;
-        const qty   = parseFloat(document.getElementById('modalQty').value) || 1;
+        const qty   = parseInt(document.getElementById('modalQty').value) || 1;
         const notes = document.getElementById('modalNotes').value;
 
         const idx = cartItems.findIndex(c => c.id === currentItem.id);
@@ -625,7 +625,7 @@ function renderCart() {
                 <div class="qty-ctrl">
                     <button type="button"
                             onclick="event.preventDefault();changeCartQty(${idx},-1)">−</button>
-                    <input type="number" value="${item.qty}" min="0.01" step="0.01"
+                    <input type="number" value="${item.qty}" min="1" step="1"
                            onchange="changeCartQtyDirect(${idx},this.value)"
                            style="width:52px;height:26px;text-align:center;border:1px solid #dee2e6;border-radius:6px;font-size:12px;">
                     <button type="button"
@@ -642,7 +642,7 @@ function renderCart() {
 
 function changeCartQty(idx, delta) {
     if (!cartItems[idx]) return;
-    cartItems[idx].qty = Math.max(0.01, Math.round((parseFloat(cartItems[idx].qty) + delta) * 100) / 100);
+    cartItems[idx].qty = Math.max(1, (parseInt(cartItems[idx].qty) || 1) + delta);
     saveCartToStorage();
     renderCart();
     refreshGrid();
@@ -650,7 +650,7 @@ function changeCartQty(idx, delta) {
 
 function changeCartQtyDirect(idx, val) {
     if (!cartItems[idx]) return;
-    cartItems[idx].qty = Math.max(0.01, parseFloat(val) || 1);
+    cartItems[idx].qty = Math.max(1, parseInt(val) || 1);
     saveCartToStorage();
     // Update total + badge budget baris ini saja, jangan re-render penuh biar fokus input tidak hilang
     const total = cartItems.reduce((s,i) => s + ((i.price||0)*i.qty), 0);

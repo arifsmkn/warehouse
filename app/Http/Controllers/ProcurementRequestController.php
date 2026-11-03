@@ -97,7 +97,7 @@ class ProcurementRequestController extends Controller
             'notes'         => 'nullable|string|max:500',
             'items'         => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:procurement_items,id',
-            'items.*.qty'     => 'required|numeric|min:0.01',
+            'items.*.qty'     => 'required|integer|min:1',
             'items.*.uom_id'  => 'required|exists:uoms,id',
             'attachments'     => 'nullable|array|max:5',
             'attachments.*'   => 'file|mimes:jpg,jpeg,pdf,xlsx,xls|max:10240',
