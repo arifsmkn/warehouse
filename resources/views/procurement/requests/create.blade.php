@@ -96,7 +96,7 @@
 @endpush
 
 @section('content')
-<form id="procurementForm" method="POST" action="{{ route('procurement.requests.store') }}" enctype="multipart/form-data">
+<form id="procurementForm" method="POST" action="{{ route('procurement.requests.store') }}">
 @csrf
 
 <div class="shop-layout">
@@ -163,17 +163,9 @@
                     <input type="text" class="form-control form-control-sm bg-light" value="{{ auth()->user()->department?->name ?? '-' }}" disabled readonly>
                     <div class="form-text" style="font-size:11px;">Otomatis sesuai departemen Anda di data user.</div>
                 </div>
-                <div class="mb-3">
+                <div class="mb-0">
                     <label class="form-label fw-semibold" style="font-size:12px;">Catatan</label>
                     <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Opsional"></textarea>
-                </div>
-                <div class="mb-0">
-                    <label class="form-label fw-semibold" style="font-size:12px;">Lampiran (opsional)</label>
-                    <input type="file" id="attachmentInput" name="attachments[]" class="form-control form-control-sm @error('attachments.*') is-invalid @enderror"
-                           accept=".jpg,.jpeg,.pdf,.xlsx,.xls" multiple>
-                    <div class="form-text" style="font-size:11px;">JPG, PDF, atau Excel — maks 5 file, 10MB per file. Foto otomatis dikompres.</div>
-                    @error('attachments.*')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    <div id="attachmentList" class="mt-2"></div>
                 </div>
             </div>
         </div>
@@ -670,23 +662,6 @@ function refreshGrid() {
     const q = document.getElementById('searchInput').value.trim();
     filterAndRender(q, activeCategory);
 }
-
-// ===== LAMPIRAN PREVIEW =====
-document.getElementById('attachmentInput').addEventListener('change', function() {
-    const list = document.getElementById('attachmentList');
-    list.innerHTML = '';
-    Array.from(this.files).forEach(file => {
-        const sizeKb = (file.size / 1024).toFixed(0);
-        const icon = file.name.match(/\.pdf$/i) ? 'bi-file-earmark-pdf text-danger'
-            : file.name.match(/\.xlsx?$/i) ? 'bi-file-earmark-excel text-success'
-            : 'bi-file-earmark-image text-primary';
-        const row = document.createElement('div');
-        row.className = 'd-flex align-items-center gap-2 py-1';
-        row.style.fontSize = '11px';
-        row.innerHTML = `<i class="bi ${icon}"></i><span class="text-truncate flex-grow-1">${file.name}</span><span class="text-muted">${sizeKb} KB</span>`;
-        list.appendChild(row);
-    });
-});
 
 // Validate sebelum submit
 document.getElementById('procurementForm').addEventListener('submit', function(e) {

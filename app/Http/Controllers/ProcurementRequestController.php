@@ -9,7 +9,6 @@ use App\Models\ProcurementRequestAttachment;
 use App\Models\User;
 use App\Notifications\SectionApprovalNeededNotification;
 use App\Services\BudgetService;
-use App\Services\FileCompressionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +17,6 @@ class ProcurementRequestController extends Controller
 {
     public function __construct(
         private BudgetService $budgetService,
-        private FileCompressionService $fileCompression,
     ) {}
 
     /** Gabungan status ProcurementRequest sendiri + status PurchaseRequest hasil agregasi GA (dipakai buat dropdown filter). */
@@ -99,8 +97,6 @@ class ProcurementRequestController extends Controller
             'items.*.item_id' => 'required|exists:procurement_items,id',
             'items.*.qty'     => 'required|integer|min:1',
             'items.*.uom_id'  => 'required|exists:uoms,id',
-            'attachments'     => 'nullable|array|max:5',
-            'attachments.*'   => 'file|mimes:jpg,jpeg,pdf,xlsx,xls|max:10240',
         ]);
 
         $pr = DB::transaction(function () use ($request) {
@@ -129,18 +125,6 @@ class ProcurementRequestController extends Controller
             }
             return $pr;
         });
-
-        foreach ($request->file('attachments', []) as $file) {
-            $stored = $this->fileCompression->store($file, 'procurement/attachments');
-
-            $pr->attachments()->create([
-                'file_path'     => $stored['path'],
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type'     => $file->getClientMimeType(),
-                'size'          => $stored['size'],
-                'uploaded_by'   => auth()->id(),
-            ]);
-        }
 
         if ($request->action === 'submit') {
             $pr->update(['status' => 'pending_section']);
