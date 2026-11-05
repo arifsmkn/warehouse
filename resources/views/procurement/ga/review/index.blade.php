@@ -15,6 +15,43 @@
 </div>
 @endif
 
+@if($failedSends->count())
+<div class="card border-danger mb-4">
+    <div class="card-header bg-danger bg-opacity-10 text-danger fw-semibold">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $failedSends->count() }} PR Gagal Kirim ke QAD -- Perlu Ditindaklanjuti
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>No. PR</th><th>Departemen</th><th>Item</th><th>Pesan Error dari QAD</th><th width="120">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($failedSends as $pr)
+                    <tr>
+                        <td><a href="{{ route('ga.requests.show', $pr->id) }}" class="fw-semibold text-primary text-decoration-none">{{ $pr->pr_no }}</a></td>
+                        <td>{{ $pr->department?->name ?? '-' }}</td>
+                        <td><span class="badge bg-secondary">{{ $pr->details->count() }} item</span></td>
+                        <td style="font-size:12px;" class="text-danger">{{ $pr->qad_sync_message }}</td>
+                        <td>
+                            <form action="{{ route('ga.requests.retry-send', $pr->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Kirim Ulang
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
+
 <form id="bulkApproveForm" action="{{ route('ga.review.bulk-approve') }}" method="POST">
     @csrf
 

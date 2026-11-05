@@ -41,16 +41,23 @@ class GaReviewController extends Controller
         // Riwayat: request yang sudah diagregasi GA DAN berhasil terkirim ke
         // QAD (detail expand di bawah, sama gayanya dengan halaman Approval
         // Section). Yang gagal kirim ke QAD sengaja dikeluarkan dari sini --
-        // PR-nya masih butuh retry (lihat GA > Riwayat PR), jadi belum
-        // selesai dan belum layak dianggap "riwayat".
+        // PR-nya masih butuh retry, jadi belum selesai dan belum layak
+        // dianggap "riwayat" -- ditampilkan sebagai blok tersendiri di
+        // halaman INI juga (bukan cuma di Riwayat PR) supaya tetap kelihatan
+        // di tempat GA kerja sehari-hari, bukan ketutup di halaman riwayat.
         $history = ProcurementRequest::with(['user', 'department', 'details.item.uom', 'attachments', 'aggregatedPr'])
             ->where('status', 'aggregated')
             ->whereHas('aggregatedPr', fn($q) => $q->where('status', '!=', 'send_failed'))
             ->latest('aggregated_at')->limit(50)->get();
 
+        $failedSends = PurchaseRequest::with('department', 'details.procurementItem.uom')
+            ->where('source', 'ga_aggregation')
+            ->where('status', 'send_failed')
+            ->latest()->get();
+
         $budgetInfo = $this->buildBudgetInfo($requests->concat($history));
 
-        return view('procurement.ga.review.index', compact('requests', 'byDepartment', 'summary', 'history', 'budgetInfo'));
+        return view('procurement.ga.review.index', compact('requests', 'byDepartment', 'summary', 'history', 'failedSends', 'budgetInfo'));
     }
 
     /**
@@ -80,11 +87,15 @@ class GaReviewController extends Controller
 
     /**
      * Riwayat PR hasil agregasi GA (satu PR = satu departemen sejak redesain ini).
+     * PR yang gagal kirim ke QAD sengaja TIDAK muncul di sini -- itu belum
+     * selesai, jadi ditampilkan di halaman Review & Agregasi GA sendiri
+     * (lihat GaReviewController::index()), bukan di halaman riwayat ini.
      */
     public function requestsIndex()
     {
         $purchaseRequests = PurchaseRequest::with('creator', 'department', 'details.procurementItem.uom')
             ->where('source', 'ga_aggregation')
+            ->where('status', '!=', 'send_failed')
             ->latest()->paginate(15);
 
         // Budget vs actual bulan berjalan per baris detail (key = detail id).
