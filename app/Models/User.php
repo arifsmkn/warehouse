@@ -41,10 +41,17 @@ class User extends Authenticatable
         return $this->belongsToMany(Department::class, 'department_section_approvers');
     }
 
-    /** Semua departemen yang boleh diapprove user section ini (department_id sendiri + tambahan). */
+    /**
+     * Semua departemen yang boleh diapprove user ini di tahap Section/Dept
+     * Head. department_id SENDIRI cuma otomatis terhitung kalau role-nya
+     * memang 'section' -- supaya role lain (user, ga, dst.) TIDAK otomatis
+     * bisa approve cuma karena kebetulan satu departemen. Departemen
+     * tambahan lewat department_section_approvers tetap berlaku untuk role
+     * apa pun (itu memang eksplisit di-grant admin, kasus rangkap jabatan).
+     */
     public function sectionApprovalDepartmentIds(): array
     {
-        return collect([$this->department_id])
+        return collect($this->role === 'section' ? [$this->department_id] : [])
             ->merge($this->approverDepartments->pluck('id'))
             ->filter()
             ->unique()
