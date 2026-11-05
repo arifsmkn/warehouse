@@ -38,10 +38,14 @@ class GaReviewController extends Controller
                 ];
             })->values();
 
-        // Riwayat: request yang sudah diagregasi GA (detail expand di bawah,
-        // sama gayanya dengan halaman Approval Section).
+        // Riwayat: request yang sudah diagregasi GA DAN berhasil terkirim ke
+        // QAD (detail expand di bawah, sama gayanya dengan halaman Approval
+        // Section). Yang gagal kirim ke QAD sengaja dikeluarkan dari sini --
+        // PR-nya masih butuh retry (lihat GA > Riwayat PR), jadi belum
+        // selesai dan belum layak dianggap "riwayat".
         $history = ProcurementRequest::with(['user', 'department', 'details.item.uom', 'attachments', 'aggregatedPr'])
             ->where('status', 'aggregated')
+            ->whereHas('aggregatedPr', fn($q) => $q->where('status', '!=', 'send_failed'))
             ->latest('aggregated_at')->limit(50)->get();
 
         $budgetInfo = $this->buildBudgetInfo($requests->concat($history));
