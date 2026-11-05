@@ -87,7 +87,7 @@
                             @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
-                        <div class="col-md-6 {{ old('role', $user->role) === 'section' ? '' : 'd-none' }}" id="approverDeptField">
+                        <div class="col-md-6 {{ in_array(old('role', $user->role), ['section','ga']) ? '' : 'd-none' }}" id="approverDeptField">
                             <label class="form-label fw-semibold">Departemen Approval Tambahan</label>
                             <select name="approver_department_ids[]" class="form-select select2" multiple>
                                 @foreach($departments as $dept)
@@ -96,7 +96,7 @@
                                 </option>
                                 @endforeach
                             </select>
-                            <div class="form-text" style="font-size:11px;">Selain departemen utama di atas, user ini juga bisa approve request dari departemen yang dipilih di sini (kasus kasi rangkap jabatan).</div>
+                            <div class="form-text" style="font-size:11px;">Selain departemen utama di atas, user ini juga bisa approve request (tahap Section/Dept Head) dari departemen yang dipilih di sini (kasus rangkap jabatan) terlepas dari Jabatan-nya.</div>
                         </div>
 
                         <div class="col-md-6 {{ old('role', $user->role) === 'director' ? '' : 'd-none' }}" id="qadApproverField">
@@ -221,7 +221,7 @@ $('.select2').select2({ theme: 'bootstrap-5' });
 function toggleQadApproverField(role) {
     document.getElementById('qadApproverField').classList.toggle('d-none', role !== 'director');
     document.getElementById('qadPasswordField').classList.toggle('d-none', role !== 'director');
-    document.getElementById('approverDeptField').classList.toggle('d-none', role !== 'section');
+    document.getElementById('approverDeptField').classList.toggle('d-none', role !== 'section' && role !== 'ga');
 }
 
 function previewPhoto(input) {

@@ -149,7 +149,7 @@ class ProcurementRequest extends Model
     {
         return match($this->status) {
             'pending_section' => $user->isSuperAdmin()
-                || ($user->role === 'section' && $user->canApproveSectionFor($this->department_id)),
+                || $user->canApproveSectionFor($this->department_id),
             'pending_ga' => $user->isSuperAdmin() || $user->isGa(),
             default      => false,
         };

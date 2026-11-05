@@ -277,8 +277,13 @@ Route::middleware('auth')->group(function () {
         Route::post('requests/{procurementRequest}/submit', [ProcurementRequestController::class, 'submit'])->name('requests.submit');
         Route::delete('requests/attachments/{attachment}', [ProcurementRequestController::class, 'destroyAttachment'])->name('requests.attachments.destroy');
 
-        // Approval Section/Dept Head (dept-scoped, dicek juga di canBeApprovedBy())
-        Route::middleware('role:section,superadmin')->group(function () {
+        // Approval Section/Dept Head (dept-scoped, dicek juga di canBeApprovedBy()).
+        // Sengaja tidak memakai middleware role:section,superadmin -- akses
+        // ditentukan canAccessSectionApprovals() (role apa pun bisa, selama
+        // terdaftar sebagai approver departemen lewat department_section_approvers
+        // atau department_id sendiri), supaya staf rangkap jabatan (mis. GA yang
+        // juga approver Section departemennya) tidak perlu ganti role utama.
+        Route::middleware(\App\Http\Middleware\CheckSectionApprovalAccess::class)->group(function () {
             Route::get('approvals', [ProcurementApprovalController::class, 'index'])->name('approvals.index');
             Route::post('approvals/{procurementRequest}/approve', [ProcurementApprovalController::class, 'approve'])->name('approvals.approve');
             Route::post('approvals/{procurementRequest}/reject', [ProcurementApprovalController::class, 'reject'])->name('approvals.reject');

@@ -581,7 +581,7 @@
                 @endif
 
                 {{-- Approval Section/Dept Head (dept-scoped) --}}
-                @if(auth()->user()->role === 'section' || auth()->user()->isSuperAdmin())
+                @if(auth()->user()->canAccessSectionApprovals())
                 <li class="sidebar-item">
                     <a href="{{ route('procurement.approvals.index') }}" class="sidebar-link {{ request()->routeIs('procurement.approvals.*') ? 'active' : '' }}">
                         <i class="pc-micon bi bi-check2-square"></i>

@@ -57,6 +57,18 @@ class User extends Authenticatable
         return $departmentId && in_array($departmentId, $this->sectionApprovalDepartmentIds());
     }
 
+    /**
+     * Dipakai buat gate menu/route "Approval Kebutuhan GA" -- sengaja TIDAK
+     * dibatasi role === 'section' literal, supaya kasus rangkap jabatan
+     * (mis. staf GA yang juga jadi approver Section departemennya sendiri)
+     * bisa diberi akses lewat department_section_approvers tanpa perlu
+     * ganti role utamanya.
+     */
+    public function canAccessSectionApprovals(): bool
+    {
+        return $this->isSuperAdmin() || !empty($this->sectionApprovalDepartmentIds());
+    }
+
     // ===== ROLE CHECKS =====
     public function isSuperAdmin(): bool  { return $this->role === 'superadmin'; }
     public function isAdmin(): bool       { return in_array($this->role, ['admin', 'superadmin']); }
